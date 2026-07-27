@@ -619,5 +619,35 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }
     }
+// دالة إرسال التاغ الممسوح إلى سيرفر MIRA
+private void sendTagToMiraServer(final String epc, final String rssi) {
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                // رابط الـ Endpoint المباشر لنظام MIRA
+                java.net.URL url = new java.net.URL("https://your-domain.com/wp-json/mira-gate/v1/scan");
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                conn.setRequestProperty("X-MIRA-API-Key", "YOUR_API_KEY");
+                conn.setDoOutput(true);
+
+                org.json.JSONObject jsonParam = new org.json.JSONObject();
+                jsonParam.put("epc", epc);
+                jsonParam.put("rssi", rssi);
+                jsonParam.put("gate_id", "handheld_c72");
+
+                try (java.io.OutputStream os = conn.getOutputStream()) {
+                    byte[] input = jsonParam.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+                int responseCode = conn.getResponseCode();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }).start();
+}
 
 }
