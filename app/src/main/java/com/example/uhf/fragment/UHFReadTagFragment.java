@@ -305,22 +305,24 @@ public class UHFReadTagFragment extends KeyDwonFragment {
      * @param
      */
     private void addDataToList(UHFTAGInfo info) {
-        String epc = info.getEPC();
-        if (StringUtils.isNotEmpty(epc)) {
-            boolean[] exists = new boolean[1];
-            int insertIndex = CheckUtils.getInsertIndex(mContext.tagList, info, exists);
-            if (exists[0]) {
-                info.setCount(mContext.tagList.get(insertIndex).getCount() + 1);
-                mContext.tagList.set(insertIndex, info);
-            } else {
-                mContext.tagList.add(insertIndex, info);
-                tv_count.setText(String.valueOf(adapter.getCount()));
-            }
-            tv_total.setText(String.valueOf(++total));
-            adapter.notifyDataSetChanged();
+    String epc = info.getEPC();
+    if (StringUtils.isNotEmpty(epc)) {
+        boolean[] exists = new boolean[1];
+        int insertIndex = CheckUtils.getInsertIndex(mContext.tagList, info, exists);
+        if (exists[0]) {
+            info.setCount(mContext.tagList.get(insertIndex).getCount() + 1);
+            mContext.tagList.set(insertIndex, info);
+        } else {
+            mContext.tagList.add(insertIndex, info);
+            tv_count.setText(String.valueOf(adapter.getCount()));
         }
+        tv_total.setText(String.valueOf(++total));
+        adapter.notifyDataSetChanged();
+        
+        // ⬅️ أضف هذا السطر هنا لإرسال التاغ فوراً إلى سيرفر MIRA:
+        sendTagToMiraServer(epc, info.getRssi());
     }
-
+}
     public class BtClearClickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
