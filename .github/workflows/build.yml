@@ -28,11 +28,14 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build Debug APK
-      run: ./gradlew :app:assembleDebug --stacktrace
+    - name: List All Gradle Tasks
+      run: ./gradlew tasks --all
+
+    - name: Build APK (Auto Detect Task)
+      run: ./gradlew build --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: MIRA-Bridge-App
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: "**/build/outputs/apk/**/*.apk"
