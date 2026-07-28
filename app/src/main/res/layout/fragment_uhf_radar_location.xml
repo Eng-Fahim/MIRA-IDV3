@@ -5,13 +5,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginHorizontal="5dp">
+    android:layout_marginHorizontal="5dp"
+    android:background="#0D1B2A">
 
+    <!-- ========== حقل EPC ========== -->
     <LinearLayout
         android:id="@+id/epcLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#1B2838"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -19,28 +23,39 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="EPC：" />
+            android:text="🎯 EPC: "
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_gravity="center" />
 
         <EditText
             android:id="@+id/etRadarEPC"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#78909C"
+            android:hint="أدخل EPC للتتبع" />
     </LinearLayout>
 
-
+    <!-- ========== شاشة الرادار ========== -->
     <com.example.uhf.view.RadarView
         android:id="@+id/radarView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toBottomOf="@id/epcLayout"
         app:layout_constraintBottom_toTopOf="@id/_llSearchRange"
-        radar:center_image="@drawable/phone"/>
+        radar:center_image="@drawable/phone"
+        android:layout_margin="8dp" />
 
+    <!-- ========== شريط نطاق البحث ========== -->
     <LinearLayout
         android:id="@+id/_llSearchRange"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:background="#1B2838"
         app:layout_constraintBottom_toTopOf="@id/tvSearchRange"
         tools:ignore="MissingConstraints">
 
@@ -49,6 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="+"
+            android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -69,29 +85,183 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="-"
+            android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- ========== نص نطاق البحث ========== -->
     <TextView
         android:id="@+id/tvSearchRange"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="@string/searchRange"
-        android:textColor="@color/blue"
-        android:textSize="16sp"
+        android:textColor="#90CAF9"
+        android:textSize="14sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/llButton"
+        android:padding="4dp"
+        android:background="#1B2838"
+        app:layout_constraintBottom_toTopOf="@id/layoutMiraRadarInfo"
         tools:ignore="MissingConstraints" />
 
+    <!-- ============================================ -->
+    <!-- 🟢 بطاقة معلومات MIRA Radar -->
+    <!-- ============================================ -->
+    <LinearLayout
+        android:id="@+id/layoutMiraRadarInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1A237E"
+        android:padding="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/layoutStats"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:id="@+id/statusIndicator"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/circle_indicator"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvRadarItemStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="حالة القطعة"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvRadarItemName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📦 اسم القطعة"
+            android:textColor="#B0BEC5"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/tvRadarItemDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏷️ التفاصيل"
+            android:textColor="#78909C"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- ============================================ -->
+    <!-- 🟢 عداد الإحصائيات -->
+    <!-- ============================================ -->
+    <LinearLayout
+        android:id="@+id/layoutStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:gravity="center"
+        android:background="#152030"
+        app:layout_constraintBottom_toTopOf="@id/llButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints">
+
+        <!-- مصرح -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvAuthorizedCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#4CAF50"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✅ مصرح"
+                android:textColor="#81C784"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- ممنوع -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvDeniedCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#F44336"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🚨 ممنوع"
+                android:textColor="#EF9A9A"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- غير معروف -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvUnknownCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FF9800"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️ غير معروف"
+                android:textColor="#FFCC80"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ========== أزرار التحكم ========== -->
     <LinearLayout
         android:id="@+id/llButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:orientation="horizontal"
-        android:paddingTop="10dp"
+        android:paddingTop="8dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -99,15 +269,24 @@
         <Button
             android:id="@+id/btRadarStart"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="44dp"
             android:layout_weight="1"
-            android:text="@string/start_location" />
+            android:layout_marginEnd="4dp"
+            android:text="@string/start_location"
+            android:background="#1A73E8"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btRadarStop"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="44dp"
             android:layout_weight="1"
-            android:text="@string/stop_location" />
+            android:layout_marginStart="4dp"
+            android:text="@string/stop_location"
+            android:background="#F44336"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
