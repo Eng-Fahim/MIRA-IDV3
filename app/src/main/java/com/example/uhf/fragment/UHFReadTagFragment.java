@@ -839,3 +839,4 @@ private void sendTagToMiraServer(final String epc, final String rssi) {
         }
     }).start();
 }
+}
