@@ -12,6 +12,49 @@
         android:padding="4dp">
 
         <!-- ============================================ -->
+<!-- 🟢 نمط العمل (Working Mode) -->
+<!-- ============================================ -->
+<LinearLayout
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    android:background="@drawable/rectangle_bg"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#0D47A1"
+        android:padding="10dp"
+        android:text="🌍 نمط العمل (Working Mode)"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:background="#FFFFFF">
+
+        <Spinner
+            android:id="@+id/spWorkingMode"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:entries="@array/working_modes" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🇾🇪 MIRA Yemen: أمثل لليمن | 🌍 Standard: عالمي | 📡 RFID: قارئ فقط | 🛠️ Dev: تطوير"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+</LinearLayout>
+
+        <!-- ============================================ -->
         <!-- 🟢 قسم MIRA Bridge - إعدادات الاتصال -->
         <!-- ============================================ -->
         <LinearLayout
