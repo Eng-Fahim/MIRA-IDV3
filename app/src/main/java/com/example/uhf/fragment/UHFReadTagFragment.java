@@ -71,6 +71,14 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private EditText etGtinInput;
     private Button btnCheckGtin;
 
+    // 🟢 عناصر بطاقة نتائج MIRA Digital Trust
+    private View cardMiraResult;
+    private View layoutMiraLoading;
+    private View layoutMiraDetails;
+    private TextView tvMiraStatus;
+    private TextView tvMiraProductName;
+    private TextView tvMiraEpcGtin;
+
     // 🟢 MIRA Bridge Simulator Instance
     private UHFReaderRepository bridgeReader;
 
@@ -145,6 +153,14 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         // 🟢 ربط عناصر الفحص اليدوي
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
+
+        // 🟢 ربط عناصر بطاقة النتيجة
+        cardMiraResult = getView().findViewById(R.id.cardMiraResult);
+        layoutMiraLoading = getView().findViewById(R.id.layoutMiraLoading);
+        layoutMiraDetails = getView().findViewById(R.id.layoutMiraDetails);
+        tvMiraStatus = (TextView) getView().findViewById(R.id.tvMiraStatus);
+        tvMiraProductName = (TextView) getView().findViewById(R.id.tvMiraProductName);
+        tvMiraEpcGtin = (TextView) getView().findViewById(R.id.tvMiraEpcGtin);
 
         // 🟢 تهيئة وتفعيل محاكي MIRA Bridge
         bridgeReader = new MockUHFReaderImpl();
@@ -628,8 +644,21 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    // 🟢 دالة الاتصال بالخادم الرئيسي MIRA
+    // 🟢 دالة الاتصال بالخادم وتحديث بطاقة MIRA في الشاشة
     private void sendTagToMiraServer(final String epc, final String rssi) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (cardMiraResult != null) {
+                        cardMiraResult.setVisibility(View.VISIBLE);
+                        if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
+                        if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -668,36 +697,50 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         response.append(line.trim());
                     }
 
-                    Log.d(TAG, "MIRA Response Code: " + responseCode);
-                    Log.d(TAG, "MIRA Response Body: " + response.toString());
+                    final String jsonResponseStr = response.toString();
 
-                    // ✅ الكود المحدث لاستخراج وعرض نتيجة الفحص التفصيلية:
-final String jsonResponseStr = response.toString();
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
 
-if (getActivity() != null) {
-    getActivity().runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-            try {
-                JSONObject jsonObject = new JSONObject(jsonResponseStr);
-                
-                if (responseCode == 200) {
-                    // استخراج الرسالة أو حالة الاعتماد من رد MIRA
-                    String statusMsg = jsonObject.optString("message", "تم التحقق بنجاح");
-                    String status = jsonObject.optString("status", "AUTHORIZED");
-                    
-                    Toast.makeText(mContext, "✅ MIRA: " + statusMsg + " [" + status + "]", Toast.LENGTH_LONG).show();
-                } else {
-                    String errorMsg = jsonObject.optString("message", "رمز غير مسجل أو غير مصرح");
-                    Toast.makeText(mContext, "❌ تنبيه MIRA: " + errorMsg, Toast.LENGTH_LONG).show();
-                }
-            } catch (Exception e) {
-                Toast.makeText(mContext, "نتيجة الاستجابة: " + jsonResponseStr, Toast.LENGTH_SHORT).show();
-            }
-        }
-    });
-}
+                                try {
+                                    JSONObject jsonObject = new JSONObject(jsonResponseStr);
+                                    
+                                    String statusMsg = jsonObject.optString("message", "تم التحقق بنجاح");
+                                    String status = jsonObject.optString("status", "AUTHORIZED");
+                                    String productName = jsonObject.optString("product_name", "غير محدد");
 
+                                    if (responseCode == 200) {
+                                        if (tvMiraStatus != null) {
+                                            tvMiraStatus.setText("✅ الحالة: " + statusMsg + " [" + status + "]");
+                                            tvMiraStatus.setTextColor(Color.parseColor("#2E7D32"));
+                                        }
+                                    } else {
+                                        if (tvMiraStatus != null) {
+                                            tvMiraStatus.setText("❌ تنبيه MIRA: " + statusMsg);
+                                            tvMiraStatus.setTextColor(Color.RED);
+                                        }
+                                    }
+
+                                    if (tvMiraProductName != null) {
+                                        tvMiraProductName.setText("اسم المنتج: " + productName);
+                                    }
+                                    if (tvMiraEpcGtin != null) {
+                                        tvMiraEpcGtin.setText("الكود المعالج: " + epc);
+                                    }
+
+                                } catch (Exception e) {
+                                    if (tvMiraStatus != null) {
+                                        tvMiraStatus.setText("⚠️ الاستجابة: " + jsonResponseStr);
+                                        tvMiraStatus.setTextColor(Color.DKGRAY);
+                                    }
+                                }
+                            }
+                        });
+                    }
 
                 } catch (final Exception e) {
                     Log.e(TAG, "MIRA Connection Error", e);
@@ -705,7 +748,12 @@ if (getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(mContext, "⚠️ خطأ اتصال: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+                                if (tvMiraStatus != null) {
+                                    tvMiraStatus.setText("⚠️ خطأ في الاتصال: " + e.getMessage());
+                                    tvMiraStatus.setTextColor(Color.RED);
+                                }
                             }
                         });
                     }
