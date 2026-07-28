@@ -635,18 +635,20 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }
     }
-// دالة إرسال التاغ الممسوح إلى سيرفر MIRA
+    // ✅ دالة إرسال التاغ الممسوح إلى سيرفر MIRA مع معالجة الأخطاء والـ Toast
 private void sendTagToMiraServer(final String epc, final String rssi) {
     new Thread(new Runnable() {
         @Override
         public void run() {
+            java.io.InputStream inputStream = null;
             try {
-                // رابط الـ Endpoint المباشر لنظام MIRA
                 java.net.URL url = new java.net.URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
                 conn.setDoOutput(true);
 
                 org.json.JSONObject jsonParam = new org.json.JSONObject();
@@ -657,12 +659,56 @@ private void sendTagToMiraServer(final String epc, final String rssi) {
                     byte[] input = jsonParam.toString().getBytes("utf-8");
                     os.write(input, 0, input.length);
                 }
-                int responseCode = conn.getResponseCode();
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                final int responseCode = conn.getResponseCode();
+                
+                // قراءة الرد سواء كان ناجحاً أم خطأ
+                if (responseCode >= 200 && responseCode < 300) {
+                    inputStream = conn.getInputStream();
+                } else {
+                    inputStream = conn.getErrorStream();
+                }
+
+                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "utf-8"));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line.trim());
+                }
+
+                Log.d(TAG, "MIRA API Response Code: " + responseCode);
+                Log.d(TAG, "MIRA API Response Body: " + response.toString());
+
+                // عرض النتيجة للمستخدم على Main Thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (responseCode == 200) {
+                                Toast.makeText(mContext, "✅ تم التسجيل في MIRA بنجاح!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(mContext, "❌ فشل الإرسال (رمز: " + responseCode + ")", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                }
+
+            } catch (final Exception e) {
+                Log.e(TAG, "MIRA Connection Error", e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mContext, "⚠️ خطأ اتصال: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } finally {
+                if (inputStream != null) {
+                    try { inputStream.close(); } catch (Exception ignored) {}
+                }
             }
         }
     }).start();
 }
-
 }
