@@ -138,4 +138,9 @@
         <item>4</item>
     </integer-array>
 
+    <!-- 🟢 MIRA Bridge API URLs -->
+    <string-array name="mira_api_urls">
+        <item>https://ams.ibreg.org/wp-json/mira-gate/v1/authorize</item>
+    </string-array>
+
 </resources>
