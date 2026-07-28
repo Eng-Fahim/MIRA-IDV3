@@ -20,20 +20,19 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
-        debug {
-            File strFile = new File("/uhf-serial_release.jks")
-            storeFile file(strFile)
-            storePassword "123456"
-            keyPassword "123456"
-            keyAlias "uhf-serial-key"
-        }
-        release {
-            File strFile = new File("/uhf-serial_release.jks")
-            storeFile file(strFile)
-            storePassword "123456"
-            keyPassword "123456"
-            keyAlias "uhf-serial-key"
-        }
+    debug {
+        storeFile file("uhf-serial_release.jks")
+        storePassword "123456"
+        keyPassword "123456"
+        keyAlias "uhf-serial-key"
+    }
+
+    release {
+        storeFile file("uhf-serial_release.jks")
+        storePassword "123456"
+        keyPassword "123456"
+        keyAlias "uhf-serial-key"
+    }
     }
 
     buildTypes {
