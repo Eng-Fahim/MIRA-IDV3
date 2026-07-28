@@ -40,8 +40,14 @@ import com.rscja.deviceapi.entity.InventoryParameter;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.IUHFInventoryCallback;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+import org.json.JSONObject;
 
 public class UHFReadTagFragment extends KeyDwonFragment {
     private static final String TAG = "UHFReadTagFragment";
@@ -55,10 +61,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
     private CheckBox cbFilter, cbPhase;
     private ViewGroup layout_filter;
-
     private CheckBox cbEPC_Tam;
 
-    // 🟢 عناصر الفحص اليدوي GTIN-13 / EPC
+    // 🟢 عناصر الفحص اليدوي لـ GTIN-13 / EPC
     private EditText etGtinInput;
     private Button btnCheckGtin;
 
@@ -130,7 +135,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         BtInventory = (Button) getView().findViewById(R.id.BtInventory);
         cbPhase = (CheckBox) getView().findViewById(R.id.cbPhase);
 
-        // 🟢 ربط عناصر الفحص اليدوي الجديدة
+        // 🟢 ربط عناصر الفحص اليدوي
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
@@ -151,7 +156,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         LvTags = (ListView) getView().findViewById(R.id.LvTags);
         adapter = new MyAdapter(mContext);
         
-        // 🟢 ميزة الاختبار اليدوي: عند الضغط الطويل على زر Clear
+        // 🟢 ضغطة طويلة على Clear لإرسال قراءة تجريبية
         BtClear.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -169,6 +174,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 adapter.notifyDataSetInvalidated();
             }
         });
+
         LvTags.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long l) {
@@ -179,6 +185,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 return false;
             }
         });
+
         LvTags.setAdapter(adapter);
         BtClear.setOnClickListener(new BtClearClickListener());
         RgInventory.setOnCheckedChangeListener(new RgInventoryCheckedListener());
@@ -188,7 +195,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         initEPCTamperAlarm(getView());
         tv_count.setText(mContext.tagList.size() + "");
         tv_total.setText(total + "");
-        Log.i(TAG, "UHFReadTagFragment.EtCountOfTags=" + tv_count.getText());
     }
 
     private Button btnSetFilter;
@@ -237,12 +243,8 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     filterBank = RFIDWithUHFUART.Bank_USER;
                 }
                 
-                if (etLen.getText().toString().isEmpty()) {
-                    mContext.showToast("数据长度不能为空");
-                    return;
-                }
-                if (etOffset.getText().toString().isEmpty()) {
-                    mContext.showToast("起始地址不能为空");
+                if (etLen.getText().toString().isEmpty() || etOffset.getText().toString().isEmpty()) {
+                    mContext.showToast("يرجى تعبئة العنوان والطول");
                     return;
                 }
                 int ptr = StringUtils.toInt(etOffset.getText().toString(), 0);
@@ -276,21 +278,15 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
         rbEPC.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if (rbEPC.isChecked()) etOffset.setText("32");
-            }
+            public void onClick(View view) { if (rbEPC.isChecked()) etOffset.setText("32"); }
         });
         rbTID.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if (rbTID.isChecked()) etOffset.setText("0");
-            }
+            public void onClick(View view) { if (rbTID.isChecked()) etOffset.setText("0"); }
         });
         rbUser.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if (rbUser.isChecked()) etOffset.setText("0");
-            }
+            public void onClick(View view) { if (rbUser.isChecked()) etOffset.setText("0"); }
         });
     }
 
@@ -308,7 +304,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
     @Override
     public void onPause() {
-        Log.i(TAG, "UHFReadTagFragment.onPause");
         super.onPause();
         stopInventory();
     }
@@ -328,7 +323,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
             
-            // 🟢 إرسال التاغ الممسوح تلقائياً لمنصة MIRA
+            // 🟢 التوصيل التلقائي لـ MIRA API عند أي مسح ليزري
             sendTagToMiraServer(epc, info.getRssi());
         }
     }
@@ -469,17 +464,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
         if (!TextUtils.isEmpty(uhftagInfo.getTid())
                 && !uhftagInfo.getTid().equals("0000000000000000")
-                && !uhftagInfo.getTid().equals("000000000000000000000000")
-        ) {
+                && !uhftagInfo.getTid().equals("000000000000000000000000")) {
             data += "\nTID:" + uhftagInfo.getTid();
         }
         if (uhftagInfo.getUser() != null && uhftagInfo.getUser().length() > 0) {
             data += "\nUSER:" + uhftagInfo.getUser();
-        }
-        if (uhftagInfo.getM775AuthenticationInfo() != null) {
-            data += "\nMessage:" + uhftagInfo.getM775AuthenticationInfo().getMessageHex();
-            data += "\nResponse:" + uhftagInfo.getM775AuthenticationInfo().getResponseHex();
-            data += "\nShortenedTid:" + uhftagInfo.getM775AuthenticationInfo().getShortenedTidHex();
         }
         return data;
     }
@@ -503,20 +492,12 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             this.mInflater = LayoutInflater.from(context);
         }
 
-        public int getCount() {
-            return mContext.tagList.size();
-        }
-
-        public Object getItem(int arg0) {
-            return mContext.tagList.get(arg0);
-        }
-
-        public long getItemId(int arg0) {
-            return arg0;
-        }
+        public int getCount() { return mContext.tagList.size(); }
+        public Object getItem(int arg0) { return mContext.tagList.get(arg0); }
+        public long getItemId(int arg0) { return arg0; }
 
         public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder holder = null;
+            ViewHolder holder;
             if (convertView == null) {
                 holder = new ViewHolder();
                 convertView = mInflater.inflate(R.layout.listtag_items, null);
@@ -612,15 +593,15 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    // 🟢 دالة إرسال التاغ / GTIN إلى خادم MIRA مع معالجة الاستجابة مباشرة
+    // 🟢 دالة الاتصال بالخادم الرئيسي MIRA
     private void sendTagToMiraServer(final String epc, final String rssi) {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                java.io.InputStream inputStream = null;
+                InputStream inputStream = null;
                 try {
-                    java.net.URL url = new java.net.URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                     conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
@@ -628,11 +609,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     conn.setReadTimeout(5000);
                     conn.setDoOutput(true);
 
-                    org.json.JSONObject jsonParam = new org.json.JSONObject();
+                    JSONObject jsonParam = new JSONObject();
                     jsonParam.put("epc", epc);
                     jsonParam.put("gate_id", "handheld_c72");
 
-                    try (java.io.OutputStream os = conn.getOutputStream()) {
+                    try (OutputStream os = conn.getOutputStream()) {
                         byte[] input = jsonParam.toString().getBytes("utf-8");
                         os.write(input, 0, input.length);
                     }
@@ -645,15 +626,15 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         inputStream = conn.getErrorStream();
                     }
 
-                    java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "utf-8"));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
                     StringBuilder response = new StringBuilder();
                     String line;
                     while ((line = reader.readLine()) != null) {
                         response.append(line.trim());
                     }
 
-                    Log.d(TAG, "MIRA API Response Code: " + responseCode);
-                    Log.d(TAG, "MIRA API Response Body: " + response.toString());
+                    Log.d(TAG, "MIRA Response Code: " + responseCode);
+                    Log.d(TAG, "MIRA Response Body: " + response.toString());
 
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
