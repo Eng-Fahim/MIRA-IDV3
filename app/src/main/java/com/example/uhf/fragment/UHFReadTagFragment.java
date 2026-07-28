@@ -131,6 +131,21 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
         LvTags = (ListView) getView().findViewById(R.id.LvTags);
         adapter = new MyAdapter(mContext);
+        
+        // -------------------------------------------------------------
+        // 🟢 ميزة الاختبار اليدوي: عند الضغط الطويل على زر Clear
+        // -------------------------------------------------------------
+        BtClear.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                String mockEpc = "E28011700000020123456789"; // EPC تجريبي
+                sendTagToMiraServer(mockEpc, "-65");
+                Toast.makeText(mContext, "تم إرسال قراءة تجريبية لـ MIRA: " + mockEpc, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
+        // -------------------------------------------------------------
+
         LvTags.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -156,7 +171,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         initFilter(getView());
 
         initEPCTamperAlarm(getView());
-        //clearData();
         tv_count.setText(mContext.tagList.size() + "");
         tv_total.setText(total + "");
         Log.i(TAG, "UHFReadTagFragment.EtCountOfTags=" + tv_count.getText());
