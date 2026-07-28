@@ -40,6 +40,10 @@ import com.rscja.deviceapi.entity.InventoryParameter;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.IUHFInventoryCallback;
 
+// 🟢 MIRA Bridge Imports
+import com.example.uhf.data.MockUHFReaderImpl;
+import com.example.uhf.data.UHFReaderRepository;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,6 +70,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     // 🟢 عناصر الفحص اليدوي لـ GTIN-13 / EPC
     private EditText etGtinInput;
     private Button btnCheckGtin;
+
+    // 🟢 MIRA Bridge Simulator Instance
+    private UHFReaderRepository bridgeReader;
 
     long maxRunTime = 36000000L;
     EditText etTime;
@@ -139,6 +146,24 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
+        // 🟢 تهيئة وتفعيل محاكي MIRA Bridge
+        bridgeReader = new MockUHFReaderImpl();
+        bridgeReader.connect();
+        bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
+            @Override
+            public void onTagRead(String epc, String tid, String rssi) {
+                UHFTAGInfo info = new UHFTAGInfo();
+                info.setEpc(epc);
+                info.setTid(tid);
+                info.setRssi(rssi);
+
+                Message msg = handler.obtainMessage();
+                msg.obj = info;
+                msg.what = 1;
+                handler.sendMessage(msg);
+            }
+        });
+
         if (btnCheckGtin != null) {
             btnCheckGtin.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -148,7 +173,13 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         Toast.makeText(mContext, "يرجى إدخال رمز GTIN-13 أو EPC للفحص", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    sendTagToMiraServer(inputCode, "-50");
+                    
+                    // تمرير البيانات اليدوية عبر طبقة الملاحة المحاكية
+                    if (bridgeReader != null) {
+                        bridgeReader.injectManualTag(inputCode, null);
+                    } else {
+                        sendTagToMiraServer(inputCode, "-50");
+                    }
                 }
             });
         }
@@ -161,7 +192,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             @Override
             public boolean onLongClick(View v) {
                 String mockEpc = "E28011700000020123456789";
-                sendTagToMiraServer(mockEpc, "-65");
+                if (bridgeReader != null) {
+                    bridgeReader.injectManualTag(mockEpc, null);
+                } else {
+                    sendTagToMiraServer(mockEpc, "-65");
+                }
                 Toast.makeText(mContext, "تم إرسال قراءة تجريبية لـ MIRA: " + mockEpc, Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -323,7 +358,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
             
-            // 🟢 التوصيل التلقائي لـ MIRA API عند أي مسح ليزري
+            // 🟢 التوصيل التلقائي لـ MIRA API عند أي مسح ليزري أو إدخال يدوي
             sendTagToMiraServer(epc, info.getRssi());
         }
     }
@@ -667,4 +702,4 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }).start();
     }
-                                                }
+}
