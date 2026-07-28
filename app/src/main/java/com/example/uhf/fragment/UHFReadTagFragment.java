@@ -3,6 +3,8 @@ package com.example.uhf.fragment;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,7 +25,9 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
@@ -40,7 +44,6 @@ import com.rscja.deviceapi.entity.InventoryParameter;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.IUHFInventoryCallback;
 
-// 🟢 MIRA Bridge Imports
 import com.example.uhf.data.MockUHFReaderImpl;
 import com.example.uhf.data.UHFReaderRepository;
 
@@ -51,6 +54,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class UHFReadTagFragment extends KeyDwonFragment {
@@ -67,11 +72,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private ViewGroup layout_filter;
     private CheckBox cbEPC_Tam;
 
-    // 🟢 عناصر الفحص اليدوي لـ GTIN-13 / EPC
+    // 🟢 عناصر الفحص اليدوي
     private EditText etGtinInput;
     private Button btnCheckGtin;
 
-    // 🟢 عناصر بطاقة نتائج MIRA Digital Trust
+    // 🟢 عناصر بطاقة MIRA
     private View cardMiraResult;
     private View layoutMiraLoading;
     private View layoutMiraDetails;
@@ -79,7 +84,13 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private TextView tvMiraProductName;
     private TextView tvMiraEpcGtin;
 
-    // 🟢 MIRA Bridge Simulator Instance
+    // 🟢 عناصر الصورة الجديدة
+    private ImageView ivMiraItemImage;
+    private ProgressBar progressImageLoading;
+    private TextView tvNoImagePlaceholder;
+    private TextView tvMiraStatusBadge;
+    private View statusIndicator;
+
     private UHFReaderRepository bridgeReader;
 
     long maxRunTime = 36000000L;
@@ -150,11 +161,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         BtInventory = (Button) getView().findViewById(R.id.BtInventory);
         cbPhase = (CheckBox) getView().findViewById(R.id.cbPhase);
 
-        // 🟢 ربط عناصر الفحص اليدوي
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
-        // 🟢 ربط عناصر بطاقة النتيجة
+        // 🟢 ربط عناصر بطاقة MIRA
         cardMiraResult = getView().findViewById(R.id.cardMiraResult);
         layoutMiraLoading = getView().findViewById(R.id.layoutMiraLoading);
         layoutMiraDetails = getView().findViewById(R.id.layoutMiraDetails);
@@ -162,24 +172,29 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tvMiraProductName = (TextView) getView().findViewById(R.id.tvMiraProductName);
         tvMiraEpcGtin = (TextView) getView().findViewById(R.id.tvMiraEpcGtin);
 
-        // 🟢 تهيئة وتفعيل محاكي MIRA Bridge
+        // 🟢 ربط عناصر الصورة الجديدة
+        ivMiraItemImage = (ImageView) getView().findViewById(R.id.ivMiraItemImage);
+        progressImageLoading = (ProgressBar) getView().findViewById(R.id.progressImageLoading);
+        tvNoImagePlaceholder = (TextView) getView().findViewById(R.id.tvNoImagePlaceholder);
+        tvMiraStatusBadge = (TextView) getView().findViewById(R.id.tvMiraStatusBadge);
+        statusIndicator = (View) getView().findViewById(R.id.statusIndicator);
+
         bridgeReader = new MockUHFReaderImpl();
         bridgeReader.connect();
-        // ✅ الكود المصحح مع الدعم الصحيح لـ SDK الخاص بأجهزة UHF:
-bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
-    @Override
-    public void onTagRead(String epc, String tid, String rssi) {
-        UHFTAGInfo info = new UHFTAGInfo();
-        info.setEPC(epc); // 🟢 استخدام الأحرف الكبيرة EPC
-        info.setTid(tid);
-        info.setRssi(rssi);
+        bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
+            @Override
+            public void onTagRead(String epc, String tid, String rssi) {
+                UHFTAGInfo info = new UHFTAGInfo();
+                info.setEPC(epc);
+                info.setTid(tid);
+                info.setRssi(rssi);
+                Message msg = handler.obtainMessage();
+                msg.obj = info;
+                msg.what = 1;
+                handler.sendMessage(msg);
+            }
+        });
 
-        Message msg = handler.obtainMessage();
-        msg.obj = info;
-        msg.what = 1;
-        handler.sendMessage(msg);
-    }
-});
         if (btnCheckGtin != null) {
             btnCheckGtin.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -189,8 +204,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                         Toast.makeText(mContext, "يرجى إدخال رمز GTIN-13 أو EPC للفحص", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    
-                    // تمرير البيانات اليدوية عبر طبقة الملاحة المحاكية
                     if (bridgeReader != null) {
                         bridgeReader.injectManualTag(inputCode, null);
                     } else {
@@ -202,8 +215,7 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
 
         LvTags = (ListView) getView().findViewById(R.id.LvTags);
         adapter = new MyAdapter(mContext);
-        
-        // 🟢 ضغطة طويلة على Clear لإرسال قراءة تجريبية
+
         BtClear.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -271,10 +283,8 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
         etData.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
             @Override
             public void afterTextChanged(Editable s) {
                 etLen.setText(String.valueOf(etData.getText().toString().trim().length() * 4));
@@ -293,7 +303,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                 } else if (rbUser.isChecked()) {
                     filterBank = RFIDWithUHFUART.Bank_USER;
                 }
-                
                 if (etLen.getText().toString().isEmpty() || etOffset.getText().toString().isEmpty()) {
                     mContext.showToast("يرجى تعبئة العنوان والطول");
                     return;
@@ -307,7 +316,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                         mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
                         return;
                     }
-
                     if (mContext.mReader.setFilter(filterBank, ptr, len, data)) {
                         mContext.showToast(R.string.uhf_msg_set_filter_succ);
                     } else {
@@ -373,8 +381,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
             }
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
-            
-            // 🟢 التوصيل التلقائي لـ MIRA API عند أي مسح ليزري أو إدخال يدوي
             sendTagToMiraServer(epc, info.getRssi());
         }
     }
@@ -394,6 +400,8 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
         total = 0;
         mContext.tagList.clear();
         adapter.notifyDataSetChanged();
+        // إخفاء بطاقة MIRA عند التنظيف
+        if (cardMiraResult != null) cardMiraResult.setVisibility(View.GONE);
     }
 
     public class RgInventoryCheckedListener implements OnCheckedChangeListener {
@@ -441,7 +449,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                         }
                     });
                     playSoundThread.cleanData();
-
                     InventoryParameter inventoryParameter = new InventoryParameter();
                     inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
                     if (mContext.mReader.startInventoryTag(inventoryParameter)) {
@@ -458,7 +465,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                         }
                         handler.removeMessages(MSG_STOP);
                         handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
-
                         BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
                         mContext.loopFlag = true;
                         setViewEnabled(false);
@@ -604,7 +610,6 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
                         }
                     }
                 }
-
                 if (mContext.loopFlag) {
                     mContext.playSound(1);
                     queue.poll();
@@ -643,200 +648,315 @@ bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
             }
         }
     }
-// 🟢 دالة الاتصال بالخادم وتحديث بطاقة MIRA في الشاشة
-private void sendTagToMiraServer(final String epc, final String rssi) {
-    if (getActivity() != null) {
-        getActivity().runOnUiThread(new Runnable() {
+
+    // =============================================
+    // 🟢 دالة تحميل الصورة وعرضها
+    // =============================================
+    private void loadItemImage(final String imageUrl) {
+        if (TextUtils.isEmpty(imageUrl)) {
+            showNoImage();
+            return;
+        }
+
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (ivMiraItemImage != null) ivMiraItemImage.setVisibility(View.GONE);
+                    if (progressImageLoading != null) progressImageLoading.setVisibility(View.VISIBLE);
+                    if (tvNoImagePlaceholder != null) tvNoImagePlaceholder.setVisibility(View.GONE);
+                }
+            });
+        }
+
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                if (cardMiraResult != null) {
-                    cardMiraResult.setVisibility(View.VISIBLE);
-                    if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
-                    if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
+                try {
+                    URL url = new URL(imageUrl);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setDoInput(true);
+                    connection.setConnectTimeout(5000);
+                    connection.setReadTimeout(10000);
+                    connection.connect();
+
+                    final Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                    connection.disconnect();
+
+                    if (bitmap != null && getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (ivMiraItemImage != null) {
+                                    ivMiraItemImage.setImageBitmap(bitmap);
+                                    ivMiraItemImage.setVisibility(View.VISIBLE);
+                                }
+                                if (progressImageLoading != null) progressImageLoading.setVisibility(View.GONE);
+                                if (tvNoImagePlaceholder != null) tvNoImagePlaceholder.setVisibility(View.GONE);
+                            }
+                        });
+                    } else {
+                        showNoImage();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error loading image: " + e.getMessage());
+                    showNoImage();
                 }
             }
-        });
+        }).start();
     }
 
-    new Thread(new Runnable() {
-        @Override
-        public void run() {
-            InputStream inputStream = null;
-            try {
-                URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setDoOutput(true);
-
-                JSONObject jsonParam = new JSONObject();
-                jsonParam.put("epc", epc);
-                jsonParam.put("gate_id", "handheld_c72");
-                if (rssi != null && !rssi.isEmpty()) {
-                    jsonParam.put("rssi", rssi);
+    private void showNoImage() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (ivMiraItemImage != null) ivMiraItemImage.setVisibility(View.GONE);
+                    if (progressImageLoading != null) progressImageLoading.setVisibility(View.GONE);
+                    if (tvNoImagePlaceholder != null) tvNoImagePlaceholder.setVisibility(View.VISIBLE);
                 }
+            });
+        }
+    }
 
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonParam.toString().getBytes("utf-8");
-                    os.write(input, 0, input.length);
+    // =============================================
+    // 🟢 دالة تحديث شارة الحالة
+    // =============================================
+    private void updateStatusBadge(boolean allowed, boolean hasItem) {
+        if (tvMiraStatusBadge != null) {
+            if (hasItem && allowed) {
+                tvMiraStatusBadge.setText("✅ مصرح");
+                tvMiraStatusBadge.setBackgroundColor(Color.parseColor("#4CAF50"));
+            } else if (hasItem && !allowed) {
+                tvMiraStatusBadge.setText("🚨 ممنوع");
+                tvMiraStatusBadge.setBackgroundColor(Color.parseColor("#F44336"));
+            } else {
+                tvMiraStatusBadge.setText("⚠️ غير معروف");
+                tvMiraStatusBadge.setBackgroundColor(Color.parseColor("#FF9800"));
+            }
+        }
+        
+        if (statusIndicator != null) {
+            if (hasItem && allowed) {
+                statusIndicator.setBackgroundColor(Color.parseColor("#4CAF50"));
+            } else if (hasItem && !allowed) {
+                statusIndicator.setBackgroundColor(Color.parseColor("#F44336"));
+            } else {
+                statusIndicator.setBackgroundColor(Color.parseColor("#FF9800"));
+            }
+        }
+    }
+
+    // =============================================
+    // 🟢 دالة الاتصال بالخادم وتحديث بطاقة MIRA
+    // =============================================
+    private void sendTagToMiraServer(final String epc, final String rssi) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (cardMiraResult != null) {
+                        cardMiraResult.setVisibility(View.VISIBLE);
+                        if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
+                        if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
+                    }
                 }
+            });
+        }
 
-                final int responseCode = conn.getResponseCode();
-                
-                if (responseCode >= 200 && responseCode < 300) {
-                    inputStream = conn.getInputStream();
-                } else {
-                    inputStream = conn.getErrorStream();
-                }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                InputStream inputStream = null;
+                try {
+                    URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+                    conn.setDoOutput(true);
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line.trim());
-                }
+                    JSONObject jsonParam = new JSONObject();
+                    jsonParam.put("epc", epc);
+                    jsonParam.put("gate_id", "handheld_c72");
+                    if (rssi != null && !rssi.isEmpty()) {
+                        jsonParam.put("rssi", rssi);
+                    }
 
-                final String jsonResponseStr = response.toString();
-                
-                // ✅ سجل الاستجابة للتصحيح
-                Log.d(TAG, "MIRA Response Code: " + responseCode);
-                Log.d(TAG, "MIRA Response Body: " + jsonResponseStr);
+                    try (OutputStream os = conn.getOutputStream()) {
+                        byte[] input = jsonParam.toString().getBytes("utf-8");
+                        os.write(input, 0, input.length);
+                    }
 
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
-                            if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+                    final int responseCode = conn.getResponseCode();
+                    
+                    if (responseCode >= 200 && responseCode < 300) {
+                        inputStream = conn.getInputStream();
+                    } else {
+                        inputStream = conn.getErrorStream();
+                    }
 
-                            try {
-                                JSONObject jsonObject = new JSONObject(jsonResponseStr);
-                                
-                                // ✅ استخراج البيانات من الهيكل الصحيح
-                                JSONObject decision = jsonObject.optJSONObject("decision");
-                                JSONObject item = jsonObject.optJSONObject("item");
-                                
-                                String decisionMessage = "";
-                                String itemTitle = "";
-                                String itemStatus = "";
-                                String itemKarat = "";
-                                double itemWeight = 0.0;
-                                boolean allowed = false;
-                                
-                                if (decision != null) {
-                                    decisionMessage = decision.optString("message", "غير معروف");
-                                    allowed = decision.optBoolean("allowed", false);
-                                }
-                                
-                                if (item != null) {
-                                    itemTitle = item.optString("title", "غير محدد");
-                                    itemStatus = item.optString("status", "");
-                                    itemKarat = item.optString("karat", "");
-                                    itemWeight = item.optDouble("weight", 0.0);
-                                }
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line.trim());
+                    }
 
-                                // ✅ تحديث حالة البطاقة
-                                if (tvMiraStatus != null) {
-                                    if (allowed && item != null) {
-                                        tvMiraStatus.setText("✅ خروج مصرح");
-                                        tvMiraStatus.setTextColor(Color.parseColor("#2E7D32"));
-                                    } else if (!allowed && item != null) {
-                                        tvMiraStatus.setText("🚨 غير مصرح بالخروج");
-                                        tvMiraStatus.setTextColor(Color.RED);
-                                    } else {
-                                        tvMiraStatus.setText("⚠️ " + decisionMessage);
-                                        tvMiraStatus.setTextColor(Color.parseColor("#FF9800"));
-                                    }
-                                }
+                    final String jsonResponseStr = response.toString();
+                    
+                    Log.d(TAG, "MIRA Response Code: " + responseCode);
+                    Log.d(TAG, "MIRA Response Body: " + jsonResponseStr);
 
-                                // ✅ اسم المنتج مع التفاصيل
-                                if (tvMiraProductName != null) {
-                                    StringBuilder productInfo = new StringBuilder();
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+
+                                try {
+                                    JSONObject jsonObject = new JSONObject(jsonResponseStr);
                                     
-                                    if (!itemTitle.isEmpty() && !itemTitle.equals("غير محدد")) {
-                                        productInfo.append("📦 ").append(itemTitle);
-                                    } else {
-                                        productInfo.append("📦 قطعة غير مسجلة");
+                                    JSONObject decision = jsonObject.optJSONObject("decision");
+                                    JSONObject item = jsonObject.optJSONObject("item");
+                                    
+                                    String decisionMessage = "";
+                                    String itemTitle = "";
+                                    String itemStatus = "";
+                                    String itemKarat = "";
+                                    double itemWeight = 0.0;
+                                    boolean allowed = false;
+                                    boolean hasItem = (item != null);
+                                    
+                                    if (decision != null) {
+                                        decisionMessage = decision.optString("message", "غير معروف");
+                                        allowed = decision.optBoolean("allowed", false);
                                     }
                                     
-                                    if (!itemKarat.isEmpty()) {
-                                        productInfo.append("\n💎 عيار: ").append(itemKarat);
-                                    }
-                                    
-                                    if (itemWeight > 0) {
-                                        productInfo.append("\n⚖️ الوزن: ").append(itemWeight).append(" غرام");
-                                    }
-                                    
-                                    tvMiraProductName.setText(productInfo.toString());
-                                }
-
-                                // ✅ الكود مع الحالة
-                                if (tvMiraEpcGtin != null) {
-                                    StringBuilder epcInfo = new StringBuilder();
-                                    epcInfo.append("🏷️ EPC: ").append(epc);
-                                    
-                                    if (!itemStatus.isEmpty()) {
-                                        String statusArabic = "";
-                                        switch (itemStatus) {
-                                            case "sold":
-                                                statusArabic = "مباع";
-                                                break;
-                                            case "available":
-                                                statusArabic = "متاح";
-                                                break;
-                                            case "reserved":
-                                                statusArabic = "محجوز";
-                                                break;
-                                            default:
-                                                statusArabic = itemStatus;
+                                    // 🟢 استخراج الصورة الأولى
+                                    String primaryImageUrl = "";
+                                    if (item != null) {
+                                        itemTitle = item.optString("title", "غير محدد");
+                                        itemStatus = item.optString("status", "");
+                                        itemKarat = item.optString("karat", "");
+                                        itemWeight = item.optDouble("weight", 0.0);
+                                        
+                                        JSONArray imagesArray = item.optJSONArray("images");
+                                        if (imagesArray != null && imagesArray.length() > 0) {
+                                            JSONObject firstImage = imagesArray.getJSONObject(0);
+                                            primaryImageUrl = firstImage.optString("image_url", "");
                                         }
-                                        epcInfo.append("\n📋 الحالة: ").append(statusArabic);
                                     }
-                                    
-                                    tvMiraEpcGtin.setText(epcInfo.toString());
-                                }
 
-                            } catch (Exception e) {
-                                Log.e(TAG, "JSON Parse Error: " + e.getMessage(), e);
+                                    // 🟢 تحميل الصورة
+                                    loadItemImage(primaryImageUrl);
+
+                                    // 🟢 تحديث الشارة
+                                    updateStatusBadge(allowed, hasItem);
+
+                                    // 🟢 تحديث حالة البطاقة
+                                    if (tvMiraStatus != null) {
+                                        if (allowed && hasItem) {
+                                            tvMiraStatus.setText("✅ خروج مصرح");
+                                            tvMiraStatus.setTextColor(Color.parseColor("#2E7D32"));
+                                        } else if (!allowed && hasItem) {
+                                            tvMiraStatus.setText("🚨 غير مصرح بالخروج");
+                                            tvMiraStatus.setTextColor(Color.RED);
+                                        } else {
+                                            tvMiraStatus.setText("⚠️ " + decisionMessage);
+                                            tvMiraStatus.setTextColor(Color.parseColor("#FF9800"));
+                                        }
+                                    }
+
+                                    // 🟢 اسم المنتج مع التفاصيل
+                                    if (tvMiraProductName != null) {
+                                        StringBuilder productInfo = new StringBuilder();
+                                        
+                                        if (!itemTitle.isEmpty() && !itemTitle.equals("غير محدد")) {
+                                            productInfo.append("📦 ").append(itemTitle);
+                                        } else {
+                                            productInfo.append("📦 قطعة غير مسجلة");
+                                        }
+                                        
+                                        if (!itemKarat.isEmpty()) {
+                                            productInfo.append("\n💎 عيار: ").append(itemKarat);
+                                        }
+                                        
+                                        if (itemWeight > 0) {
+                                            productInfo.append("\n⚖️ الوزن: ").append(itemWeight).append(" غرام");
+                                        }
+                                        
+                                        tvMiraProductName.setText(productInfo.toString());
+                                    }
+
+                                    // 🟢 الكود مع الحالة
+                                    if (tvMiraEpcGtin != null) {
+                                        StringBuilder epcInfo = new StringBuilder();
+                                        epcInfo.append("🏷️ EPC: ").append(epc);
+                                        
+                                        if (!itemStatus.isEmpty()) {
+                                            String statusArabic;
+                                            switch (itemStatus) {
+                                                case "sold":
+                                                    statusArabic = "مباع";
+                                                    break;
+                                                case "available":
+                                                    statusArabic = "متاح";
+                                                    break;
+                                                case "reserved":
+                                                    statusArabic = "محجوز";
+                                                    break;
+                                                default:
+                                                    statusArabic = itemStatus;
+                                            }
+                                            epcInfo.append("\n📋 الحالة: ").append(statusArabic);
+                                        }
+                                        
+                                        tvMiraEpcGtin.setText(epcInfo.toString());
+                                    }
+
+                                } catch (Exception e) {
+                                    Log.e(TAG, "JSON Parse Error: " + e.getMessage(), e);
+                                    if (tvMiraStatus != null) {
+                                        tvMiraStatus.setText("⚠️ خطأ في تحليل البيانات");
+                                        tvMiraStatus.setTextColor(Color.RED);
+                                    }
+                                    if (tvMiraProductName != null) {
+                                        tvMiraProductName.setText("الرد: " + jsonResponseStr);
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                } catch (final Exception e) {
+                    Log.e(TAG, "MIRA Connection Error", e);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
                                 if (tvMiraStatus != null) {
-                                    tvMiraStatus.setText("⚠️ خطأ في تحليل البيانات");
+                                    tvMiraStatus.setText("❌ خطأ في الاتصال: " + e.getMessage());
                                     tvMiraStatus.setTextColor(Color.RED);
                                 }
                                 if (tvMiraProductName != null) {
-                                    tvMiraProductName.setText("الرد: " + jsonResponseStr);
+                                    tvMiraProductName.setText("تأكد من اتصال الإنترنت");
                                 }
                             }
-                        }
-                    });
-                }
-
-            } catch (final Exception e) {
-                Log.e(TAG, "MIRA Connection Error", e);
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
-                            if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
-                            if (tvMiraStatus != null) {
-                                tvMiraStatus.setText("❌ خطأ في الاتصال: " + e.getMessage());
-                                tvMiraStatus.setTextColor(Color.RED);
-                            }
-                            if (tvMiraProductName != null) {
-                                tvMiraProductName.setText("تأكد من اتصال الإنترنت");
-                            }
-                        }
-                    });
-                }
-            } finally {
-                if (inputStream != null) {
-                    try { inputStream.close(); } catch (Exception ignored) {}
+                        });
+                    }
+                } finally {
+                    if (inputStream != null) {
+                        try { inputStream.close(); } catch (Exception ignored) {}
+                    }
                 }
             }
-        }
-    }).start();
-}
-}
+        }).start();
+    }
+
+} // نهاية الكلاس
