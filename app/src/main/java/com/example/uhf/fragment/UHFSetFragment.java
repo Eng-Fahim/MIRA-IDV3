@@ -205,7 +205,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         btnGetFre.setOnClickListener(new GetFreOnclickListener());
 
         btnSetFreHop.setOnClickListener(this);
-        btnSetProtocol.setOnClickListener(this);
 
         btnSetLinkParams.setOnClickListener(this);
         btnGetLinkParams.setOnClickListener(this);
