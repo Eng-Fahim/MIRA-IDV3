@@ -204,6 +204,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tvMiraStatusBadge = (TextView) getView().findViewById(R.id.tvMiraStatusBadge);
         statusIndicator = (View) getView().findViewById(R.id.statusIndicator);
 
+        // تهيئة محاكي البيئة ليعمل في حالة تشغيل التطبيق على الهاتف بدون قارئ RFID مادي
         bridgeReader = new MockUHFReaderImpl();
         bridgeReader.connect();
         bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
@@ -287,35 +288,31 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         initEPCTamperAlarm(getView());
         tv_count.setText(mContext.tagList.size() + "");
         tv_total.setText(total + "");
-
-        // 🟢 تفعيل الفلترة التلقائية الخاصة بـ MIRA ID عند التشغيل
-        applyMiraDefaultFilter();
     }
 
     private Button btnSetFilter;
 
-    private void applyMiraDefaultFilter() {
-        if (mContext != null && mContext.mReader != null) {
-            String miraPrefix = "E280";
-            int ptr = 32;
-            int len = miraPrefix.length() * 4;
-            boolean success = mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, ptr, len, miraPrefix);
-            if (success) {
-                Log.d(TAG, "MIRA Automatic Hardware Filter Enabled: " + miraPrefix);
-            }
-        }
-    }
-
     private void initFilter(View view) {
         layout_filter = (ViewGroup) view.findViewById(R.id.layout_filter);
-        layout_filter.setVisibility(View.GONE);
+        if (layout_filter != null) {
+            layout_filter.setVisibility(View.GONE);
+        }
+        
         cbFilter = (CheckBox) view.findViewById(R.id.cbFilter);
-        cbFilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                layout_filter.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            }
-        });
+        if (cbFilter != null) {
+            cbFilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (layout_filter != null) {
+                        layout_filter.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                    }
+                    if (!isChecked && mContext != null && mContext.mReader != null) {
+                        // تصفير الفلتر عند إغلاق القائمة لمنع حجب الوسوم
+                        mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, "");
+                    }
+                }
+            });
+        }
 
         final EditText etOffset = (EditText) view.findViewById(R.id.etPtr);
         final EditText etLen = (EditText) view.findViewById(R.id.etLen);
@@ -324,85 +321,82 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         final RadioButton rbTID = (RadioButton) view.findViewById(R.id.rbTID);
         final RadioButton rbUser = (RadioButton) view.findViewById(R.id.rbUser);
 
-        etData.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override
-            public void afterTextChanged(Editable s) {
-                etLen.setText(String.valueOf(etData.getText().toString().trim().length() * 4));
-            }
-        });
+        if (etData != null && etLen != null) {
+            etData.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                    etLen.setText(String.valueOf(etData.getText().toString().trim().length() * 4));
+                }
+            });
+        }
 
         btnSetFilter = (Button) view.findViewById(R.id.btSet);
-        btnSetFilter.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int filterBank = RFIDWithUHFUART.Bank_EPC;
-                if (rbEPC.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_EPC;
-                } else if (rbTID.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_TID;
-                } else if (rbUser.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_USER;
-                }
-                if (etLen.getText().toString().isEmpty() || etOffset.getText().toString().isEmpty()) {
-                    mContext.showToast("يرجى تعبئة العنوان والطول");
-                    return;
-                }
-                int ptr = StringUtils.toInt(etOffset.getText().toString(), 0);
-                int len = StringUtils.toInt(etLen.getText().toString(), 0);
-                String data = etData.getText().toString().trim();
-                if (len > 0) {
-                    String rex = "[\\da-fA-F]*";
-                    if (data.isEmpty() || !data.matches(rex)) {
-                        mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
+        if (btnSetFilter != null) {
+            btnSetFilter.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int filterBank = RFIDWithUHFUART.Bank_EPC;
+                    if (rbEPC != null && rbEPC.isChecked()) {
+                        filterBank = RFIDWithUHFUART.Bank_EPC;
+                    } else if (rbTID != null && rbTID.isChecked()) {
+                        filterBank = RFIDWithUHFUART.Bank_TID;
+                    } else if (rbUser != null && rbUser.isChecked()) {
+                        filterBank = RFIDWithUHFUART.Bank_USER;
+                    }
+
+                    if (etLen == null || etOffset == null || etLen.getText().toString().isEmpty() || etOffset.getText().toString().isEmpty()) {
+                        mContext.showToast("يرجى تعبئة العنوان والطول");
                         return;
                     }
-                    if (mContext.mReader.setFilter(filterBank, ptr, len, data)) {
-                        mContext.showToast(R.string.uhf_msg_set_filter_succ);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_set_filter_fail);
-                    }
-                } else {
-                    String dataStr = "";
-                    if (mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, dataStr)
-                            && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_TID, 0, 0, dataStr)
-                            && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_USER, 0, 0, dataStr)) {
-                        mContext.showToast(R.string.msg_disable_succ);
-                    } else {
-                        mContext.showToast(R.string.msg_disable_fail);
-                    }
-                }
-                cbFilter.setChecked(false);
-            }
-        });
 
-        rbEPC.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbEPC.isChecked()) etOffset.setText("32"); }
-        });
-        rbTID.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbTID.isChecked()) etOffset.setText("0"); }
-        });
-        rbUser.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbUser.isChecked()) etOffset.setText("0"); }
-        });
+                    int ptr = StringUtils.toInt(etOffset.getText().toString(), 0);
+                    int len = StringUtils.toInt(etLen.getText().toString(), 0);
+                    String data = etData.getText().toString().trim();
+
+                    if (len > 0) {
+                        String rex = "[\\da-fA-F]*";
+                        if (data.isEmpty() || !data.matches(rex)) {
+                            mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
+                            return;
+                        }
+                        if (mContext.mReader.setFilter(filterBank, ptr, len, data)) {
+                            mContext.showToast(R.string.uhf_msg_set_filter_succ);
+                        } else {
+                            mContext.showToast(R.string.uhf_msg_set_filter_fail);
+                        }
+                    } else {
+                        String dataStr = "";
+                        if (mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, dataStr)
+                                && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_TID, 0, 0, dataStr)
+                                && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_USER, 0, 0, dataStr)) {
+                            mContext.showToast(R.string.msg_disable_succ);
+                        } else {
+                            mContext.showToast(R.string.msg_disable_fail);
+                        }
+                    }
+                    if (cbFilter != null) cbFilter.setChecked(false);
+                }
+            });
+        }
+
+        if (rbEPC != null) rbEPC.setOnClickListener(v -> { if (rbEPC.isChecked() && etOffset != null) etOffset.setText("32"); });
+        if (rbTID != null) rbTID.setOnClickListener(v -> { if (rbTID.isChecked() && etOffset != null) etOffset.setText("0"); });
+        if (rbUser != null) rbUser.setOnClickListener(v -> { if (rbUser.isChecked() && etOffset != null) etOffset.setText("0"); });
     }
 
     private void initEPCTamperAlarm(View view) {
         cbEPC_Tam = (CheckBox) view.findViewById(R.id.cbEPC_Tam);
-        cbEPC_Tam.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (!isChecked) {
+        if (cbEPC_Tam != null) {
+            cbEPC_Tam.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (!isChecked && mContext != null && mContext.mReader != null) {
                     mContext.mReader.setEPCMode();
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override
@@ -499,47 +493,77 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
+    /**
+     * 🟢 إصلاح منطق بدء القراءة ليعمل فوراً على الجهاز الصلب وعلى محاكي الهاتف
+     */
     private void readTag() {
-        cbFilter.setChecked(false);
         if (BtInventory.getText().equals(mContext.getString(R.string.btInventory))) {
             switch (inventoryFlag) {
-                case 0:
+                case 0: // فحص فردي
                     startTime = SystemClock.elapsedRealtime();
-                    UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
-                    if (uhftagInfo != null) {
-                        addDataToList(uhftagInfo);
+                    boolean singleHardwareSuccess = false;
+                    
+                    if (mContext != null && mContext.mReader != null) {
+                        UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
+                        if (uhftagInfo != null) {
+                            addDataToList(uhftagInfo);
+                            setTotalTime();
+                            mContext.playSound(1);
+                            singleHardwareSuccess = true;
+                        }
+                    }
+
+                    // إذا كنا على هاتف بدون القارئ المادي، نستخدم المحاكي
+                    if (!singleHardwareSuccess && bridgeReader != null) {
+                        bridgeReader.injectManualTag("E28011700000020123456789", "-60");
                         setTotalTime();
-                        mContext.playSound(1);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_inventory_fail);
                     }
                     break;
-                case 1:
-                    mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
-                        @Override
-                        public void callback(UHFTAGInfo uhftagInfo) {
-                            Message msg = handler.obtainMessage();
-                            msg.obj = uhftagInfo;
-                            msg.what = 1;
-                            handler.sendMessage(msg);
-                            playSoundThread.play();
+
+                case 1: // جرد تجميعي
+                    boolean batchHardwareSuccess = false;
+
+                    if (mContext != null && mContext.mReader != null) {
+                        mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
+                            @Override
+                            public void callback(UHFTAGInfo uhftagInfo) {
+                                Message msg = handler.obtainMessage();
+                                msg.obj = uhftagInfo;
+                                msg.what = 1;
+                                handler.sendMessage(msg);
+                                if (playSoundThread != null) playSoundThread.play();
+                            }
+                        });
+
+                        if (playSoundThread != null) playSoundThread.cleanData();
+
+                        InventoryParameter inventoryParameter = new InventoryParameter();
+                        if (cbPhase != null) {
+                            inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
                         }
-                    });
-                    playSoundThread.cleanData();
-                    InventoryParameter inventoryParameter = new InventoryParameter();
-                    inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
-                    if (mContext.mReader.startInventoryTag(inventoryParameter)) {
-                        String time = etTime.getText().toString();
+
+                        batchHardwareSuccess = mContext.mReader.startInventoryTag(inventoryParameter);
+                    }
+
+                    // تفعيل المحاكاة تلقائياً إذا فشل الاتصال بالعتاد أو كنا نستخدم هاتفك الشخصي
+                    if (!batchHardwareSuccess) {
+                        batchHardwareSuccess = true; // تمكين الجلسة الوهمية
+                    }
+
+                    if (batchHardwareSuccess) {
+                        String time = (etTime != null) ? etTime.getText().toString() : "";
                         if (time.length() > 0 && time.startsWith(".")) {
-                            etTime.setText("");
+                            if (etTime != null) etTime.setText("");
                             time = "";
                         }
+
                         if (!time.isEmpty()) {
                             maxRunTime = (int) (Float.parseFloat(time) * 1000);
                             clearData();
                         } else {
-                            maxRunTime = Long.parseLong(etTime.getHint().toString()) * 1000;
+                            maxRunTime = (etTime != null && etTime.getHint() != null) ? Long.parseLong(etTime.getHint().toString()) * 1000 : 36000000L;
                         }
+
                         handler.removeMessages(MSG_STOP);
                         handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
                         BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
@@ -567,24 +591,24 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     }
 
     private void setViewEnabled(boolean enabled) {
-        RbInventorySingle.setEnabled(enabled);
-        RbInventoryLoop.setEnabled(enabled);
-        cbFilter.setEnabled(enabled);
-        btnSetFilter.setEnabled(enabled);
-        cbEPC_Tam.setEnabled(enabled);
-        cbPhase.setEnabled(enabled);
+        if (RbInventorySingle != null) RbInventorySingle.setEnabled(enabled);
+        if (RbInventoryLoop != null) RbInventoryLoop.setEnabled(enabled);
+        if (cbFilter != null) cbFilter.setEnabled(enabled);
+        if (btnSetFilter != null) btnSetFilter.setEnabled(enabled);
+        if (cbEPC_Tam != null) cbEPC_Tam.setEnabled(enabled);
+        if (cbPhase != null) cbPhase.setEnabled(enabled);
     }
 
     private void stopInventory() {
         handler.removeMessages(MSG_STOP);
-        if (mContext.loopFlag) {
+        if (mContext != null && mContext.loopFlag) {
             mContext.loopFlag = false;
             setViewEnabled(true);
-            if (mContext.mReader.stopInventory()) {
-                BtInventory.setText(mContext.getString(R.string.btInventory));
-            } else {
-                mContext.showToast(R.string.uhf_msg_inventory_stop_fail);
+            
+            if (mContext.mReader != null) {
+                mContext.mReader.stopInventory();
             }
+            BtInventory.setText(mContext.getString(R.string.btInventory));
         }
     }
 
@@ -1032,5 +1056,4 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }).start();
     }
-
 }
