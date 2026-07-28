@@ -53,6 +53,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.json.JSONArray;
@@ -60,7 +62,7 @@ import org.json.JSONObject;
 
 public class UHFReadTagFragment extends KeyDwonFragment {
     private static final String TAG = "UHFReadTagFragment";
-    private int inventoryFlag = 1;
+    private int inventoryFlag = 1; // 0: Single, 1: Loop/Batch
     MyAdapter adapter;
     Button BtClear;
     TextView tvTime, tv_count, tv_total;
@@ -84,12 +86,23 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private TextView tvMiraProductName;
     private TextView tvMiraEpcGtin;
 
-    // 🟢 عناصر الصورة الجديدة
+    // 🟢 عناصر الصورة والشارات
     private ImageView ivMiraItemImage;
     private ProgressBar progressImageLoading;
     private TextView tvNoImagePlaceholder;
     private TextView tvMiraStatusBadge;
     private View statusIndicator;
+
+    // 🟢 عناصر ملخص الجرد التجميعي (Batch Mode Summary)
+    private TextView tvBatchTotal;
+    private TextView tvBatchAllowed;
+    private TextView tvBatchBlocked;
+    private TextView tvBatchUnknown;
+
+    private int countAllowed = 0;
+    private int countBlocked = 0;
+    private int countUnknown = 0;
+    private Map<String, Boolean> processedTagsMap = new HashMap<>();
 
     private UHFReaderRepository bridgeReader;
 
@@ -134,7 +147,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContext.mReader.setInventoryCallback(null);
+        if (mContext != null && mContext.mReader != null) {
+            mContext.mReader.setInventoryCallback(null);
+        }
         Log.i(TAG, "onDestroyView");
         if (playSoundThread != null) {
             playSoundThread.stopPlay();
@@ -164,6 +179,12 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
+        // 🟢 ربط عناصر ملخص الجرد التجميعي
+        tvBatchTotal = (TextView) getView().findViewById(R.id.tvBatchTotal);
+        tvBatchAllowed = (TextView) getView().findViewById(R.id.tvBatchAllowed);
+        tvBatchBlocked = (TextView) getView().findViewById(R.id.tvBatchBlocked);
+        tvBatchUnknown = (TextView) getView().findViewById(R.id.tvBatchUnknown);
+
         // 🟢 ربط عناصر بطاقة MIRA
         cardMiraResult = getView().findViewById(R.id.cardMiraResult);
         layoutMiraLoading = getView().findViewById(R.id.layoutMiraLoading);
@@ -172,7 +193,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tvMiraProductName = (TextView) getView().findViewById(R.id.tvMiraProductName);
         tvMiraEpcGtin = (TextView) getView().findViewById(R.id.tvMiraEpcGtin);
 
-        // 🟢 ربط عناصر الصورة الجديدة
+        // 🟢 ربط عناصر الصورة والشارات
         ivMiraItemImage = (ImageView) getView().findViewById(R.id.ivMiraItemImage);
         progressImageLoading = (ProgressBar) getView().findViewById(R.id.progressImageLoading);
         tvNoImagePlaceholder = (TextView) getView().findViewById(R.id.tvNoImagePlaceholder);
@@ -235,6 +256,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 adapter.setSelectItem(position);
                 adapter.notifyDataSetInvalidated();
+                UHFTAGInfo selectedTag = mContext.tagList.get(position);
+                if (selectedTag != null && !TextUtils.isEmpty(selectedTag.getEPC())) {
+                    sendTagToMiraServer(selectedTag.getEPC(), selectedTag.getRssi());
+                }
             }
         });
 
@@ -258,9 +283,24 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         initEPCTamperAlarm(getView());
         tv_count.setText(mContext.tagList.size() + "");
         tv_total.setText(total + "");
+
+        // 🟢 تفعيل الفلترة التلقائية الخاصة بـ MIRA ID عند التشغيل
+        applyMiraDefaultFilter();
     }
 
     private Button btnSetFilter;
+
+    private void applyMiraDefaultFilter() {
+        if (mContext != null && mContext.mReader != null) {
+            String miraPrefix = "E280";
+            int ptr = 32;
+            int len = miraPrefix.length() * 4;
+            boolean success = mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, ptr, len, miraPrefix);
+            if (success) {
+                Log.d(TAG, "MIRA Automatic Hardware Filter Enabled: " + miraPrefix);
+            }
+        }
+    }
 
     private void initFilter(View view) {
         layout_filter = (ViewGroup) view.findViewById(R.id.layout_filter);
@@ -381,6 +421,8 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
+
+            // 🟢 الاستعلام التلقائي من خادم MIRA لكل الشريحة المجلوبة
             sendTagToMiraServer(epc, info.getRssi());
         }
     }
@@ -398,10 +440,30 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tv_total.setText("0");
         tvTime.setText("0s");
         total = 0;
+        countAllowed = 0;
+        countBlocked = 0;
+        countUnknown = 0;
+        processedTagsMap.clear();
+
+        updateBatchSummaryUI();
+
         mContext.tagList.clear();
         adapter.notifyDataSetChanged();
-        // إخفاء بطاقة MIRA عند التنظيف
         if (cardMiraResult != null) cardMiraResult.setVisibility(View.GONE);
+    }
+
+    private void updateBatchSummaryUI() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (tvBatchTotal != null) tvBatchTotal.setText(String.valueOf(processedTagsMap.size()));
+                    if (tvBatchAllowed != null) tvBatchAllowed.setText(String.valueOf(countAllowed));
+                    if (tvBatchBlocked != null) tvBatchBlocked.setText(String.valueOf(countBlocked));
+                    if (tvBatchUnknown != null) tvBatchUnknown.setText(String.valueOf(countUnknown));
+                }
+            });
+        }
     }
 
     public class RgInventoryCheckedListener implements OnCheckedChangeListener {
@@ -649,9 +711,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    // =============================================
-    // 🟢 دالة تحميل الصورة وعرضها
-    // =============================================
     private void loadItemImage(final String imageUrl) {
         if (TextUtils.isEmpty(imageUrl)) {
             showNoImage();
@@ -719,9 +778,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    // =============================================
-    // 🟢 دالة تحديث شارة الحالة
-    // =============================================
     private void updateStatusBadge(boolean allowed, boolean hasItem) {
         if (tvMiraStatusBadge != null) {
             if (hasItem && allowed) {
@@ -735,7 +791,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 tvMiraStatusBadge.setBackgroundColor(Color.parseColor("#FF9800"));
             }
         }
-        
+
         if (statusIndicator != null) {
             if (hasItem && allowed) {
                 statusIndicator.setBackgroundColor(Color.parseColor("#4CAF50"));
@@ -747,9 +803,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    // =============================================
-    // 🟢 دالة الاتصال بالخادم وتحديث بطاقة MIRA
-    // =============================================
     private void sendTagToMiraServer(final String epc, final String rssi) {
         if (getActivity() != null) {
             getActivity().runOnUiThread(new Runnable() {
@@ -791,7 +844,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     }
 
                     final int responseCode = conn.getResponseCode();
-                    
+
                     if (responseCode >= 200 && responseCode < 300) {
                         inputStream = conn.getInputStream();
                     } else {
@@ -806,7 +859,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     }
 
                     final String jsonResponseStr = response.toString();
-                    
+
                     Log.d(TAG, "MIRA Response Code: " + responseCode);
                     Log.d(TAG, "MIRA Response Body: " + jsonResponseStr);
 
@@ -819,10 +872,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
                                 try {
                                     JSONObject jsonObject = new JSONObject(jsonResponseStr);
-                                    
+
                                     JSONObject decision = jsonObject.optJSONObject("decision");
                                     JSONObject item = jsonObject.optJSONObject("item");
-                                    
+
                                     String decisionMessage = "";
                                     String itemTitle = "";
                                     String itemStatus = "";
@@ -830,20 +883,32 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                     double itemWeight = 0.0;
                                     boolean allowed = false;
                                     boolean hasItem = (item != null);
-                                    
+
                                     if (decision != null) {
                                         decisionMessage = decision.optString("message", "غير معروف");
                                         allowed = decision.optBoolean("allowed", false);
                                     }
-                                    
-                                    // 🟢 استخراج الصورة الأولى
+
+                                    // 🟢 تحديث إحصائيات الجرد التجميعي (Batch Counters)
+                                    if (!processedTagsMap.containsKey(epc)) {
+                                        processedTagsMap.put(epc, true);
+                                        if (hasItem && allowed) {
+                                            countAllowed++;
+                                        } else if (hasItem && !allowed) {
+                                            countBlocked++;
+                                        } else {
+                                            countUnknown++;
+                                        }
+                                        updateBatchSummaryUI();
+                                    }
+
                                     String primaryImageUrl = "";
                                     if (item != null) {
                                         itemTitle = item.optString("title", "غير محدد");
                                         itemStatus = item.optString("status", "");
                                         itemKarat = item.optString("karat", "");
                                         itemWeight = item.optDouble("weight", 0.0);
-                                        
+
                                         JSONArray imagesArray = item.optJSONArray("images");
                                         if (imagesArray != null && imagesArray.length() > 0) {
                                             JSONObject firstImage = imagesArray.getJSONObject(0);
@@ -851,13 +916,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                         }
                                     }
 
-                                    // 🟢 تحميل الصورة
                                     loadItemImage(primaryImageUrl);
-
-                                    // 🟢 تحديث الشارة
                                     updateStatusBadge(allowed, hasItem);
 
-                                    // 🟢 تحديث حالة البطاقة
                                     if (tvMiraStatus != null) {
                                         if (allowed && hasItem) {
                                             tvMiraStatus.setText("✅ خروج مصرح");
@@ -871,32 +932,30 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                         }
                                     }
 
-                                    // 🟢 اسم المنتج مع التفاصيل
                                     if (tvMiraProductName != null) {
                                         StringBuilder productInfo = new StringBuilder();
-                                        
+
                                         if (!itemTitle.isEmpty() && !itemTitle.equals("غير محدد")) {
                                             productInfo.append("📦 ").append(itemTitle);
                                         } else {
                                             productInfo.append("📦 قطعة غير مسجلة");
                                         }
-                                        
+
                                         if (!itemKarat.isEmpty()) {
                                             productInfo.append("\n💎 عيار: ").append(itemKarat);
                                         }
-                                        
+
                                         if (itemWeight > 0) {
                                             productInfo.append("\n⚖️ الوزن: ").append(itemWeight).append(" غرام");
                                         }
-                                        
+
                                         tvMiraProductName.setText(productInfo.toString());
                                     }
 
-                                    // 🟢 الكود مع الحالة
                                     if (tvMiraEpcGtin != null) {
                                         StringBuilder epcInfo = new StringBuilder();
                                         epcInfo.append("🏷️ EPC: ").append(epc);
-                                        
+
                                         if (!itemStatus.isEmpty()) {
                                             String statusArabic;
                                             switch (itemStatus) {
@@ -914,7 +973,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                             }
                                             epcInfo.append("\n📋 الحالة: ").append(statusArabic);
                                         }
-                                        
+
                                         tvMiraEpcGtin.setText(epcInfo.toString());
                                     }
 
@@ -959,4 +1018,4 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }).start();
     }
 
-} // نهاية الكلاس
+}
