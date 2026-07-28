@@ -355,60 +355,48 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     private float simulationAngle = 0;
     private Random random = new Random();
 
-    private void startSimulatedRadar() {
-        final String epcToTrack = targetEpc;
-        
-        // استعلام MIRA مباشرة
-        queryMiraItem(epcToTrack);
-        
-        // بدء محاكاة الرادار
-        radarView.startRadar();
-        seekBarPower.setEnabled(true);
-        inventoryFlag = true;
-        btStart.setEnabled(false);
-        etEPC.setEnabled(false);
-        
-        simulationRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!inventoryFlag) return;
-                
-                // تحديث الزاوية
-                simulationAngle += 5;
-                if (simulationAngle >= 360) simulationAngle = 0;
-                
-                // توليد نقاط وهمية
-                List<RadarLocationEntity> simulatedList = new ArrayList<>();
-                
-                // إضافة القطعة المستهدفة
-                RadarLocationEntity targetEntity = new RadarLocationEntity();
-                targetEntity.setTag(epcToTrack);
-                targetEntity.setValue(random.nextInt(100) + 1);
-                targetEntity.setEPC(epcToTrack);
-                simulatedList.add(targetEntity);
-                
-                // إضافة قطع أخرى وهمية
-                for (int i = 0; i < random.nextInt(8) + 2; i++) {
-                    RadarLocationEntity entity = new RadarLocationEntity();
-                    entity.setTag("SIM_" + i);
-                    entity.setValue(random.nextInt(80) + 20);
-                    entity.setEPC("SIM_" + i);
-                    simulatedList.add(entity);
-                }
-                
-                radarView.bindingData(simulatedList, epcToTrack);
-                radarView.setRotation(-simulationAngle);
-                
-                mContext.playSound(1);
-                
-                simulationHandler.postDelayed(this, 1500);
-            }
-        };
-        simulationHandler.post(simulationRunnable);
-        
-        Toast.makeText(mContext, "⚡ وضع المحاكاة", Toast.LENGTH_SHORT).show();
-        Log.i(TAG, "Simulated radar started");
-    }
+    // 🟢 محاكي الرادار للتطوير والاختبار (مُبسط)
+private void startSimulatedRadar() {
+    final String epcToTrack = targetEpc;
+    
+    // استعلام MIRA مباشرة
+    queryMiraItem(epcToTrack);
+    
+    // بدء محاكاة الرادار
+    radarView.startRadar();
+    seekBarPower.setEnabled(true);
+    inventoryFlag = true;
+    btStart.setEnabled(false);
+    etEPC.setEnabled(false);
+    
+    simulationRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!inventoryFlag) return;
+            
+            // تحديث الزاوية
+            simulationAngle += 5;
+            if (simulationAngle >= 360) simulationAngle = 0;
+            
+            // توليد نقاط وهمية (باستخدام List فارغة أو بدون setTag)
+            List<RadarLocationEntity> simulatedList = new ArrayList<>();
+            
+            // نستخدم كائنات فارغة فقط للعرض
+            // RadarLocationEntity قد لا يدعم setTag/setEPC
+            
+            radarView.bindingData(simulatedList, epcToTrack);
+            radarView.setRotation(-simulationAngle);
+            
+            mContext.playSound(1);
+            
+            simulationHandler.postDelayed(this, 1500);
+        }
+    };
+    simulationHandler.post(simulationRunnable);
+    
+    Toast.makeText(mContext, "⚡ وضع المحاكاة", Toast.LENGTH_SHORT).show();
+    Log.i(TAG, "Simulated radar started");
+}
 
     // =============================================
     // 🟢 دالة الإيقاف (موحدة)
