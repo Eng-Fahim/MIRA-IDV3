@@ -606,13 +606,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                     setFreHop(Float.valueOf(freHop));
                 }
                 break;
-            case R.id.btnSetProtocol:
-                if (mContext.mReader.setProtocol(SpinnerAgreement.getSelectedItemPosition())) {
-                    mContext.showToast(R.string.setAgreement_succ);
-                } else {
-                    mContext.showToast(R.string.setAgreement_fail);
-                }
-                break;
+            
             case R.id.btnSetLinkParams:
                 int index = splinkParams.getSelectedItemPosition();
                 int link = arrayLinkValue.get(index);
