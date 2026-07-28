@@ -261,36 +261,116 @@
             android:textSize="15sp" />
     </LinearLayout>
 
-    <!-- 🟢 قسم الفحص المباشر (GTIN-13 Lookup) الجديد -->
+    <!-- 🟢 قسم الفحص المباشر الاحترافي والمدمج لخدمة MIRA ID -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="6dp"
-        android:paddingBottom="5dp"
-        android:gravity="center_vertical"
-        android:background="#F8F9FA">
+        android:orientation="vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp"
+        android:background="#F0F4F8">
 
-        <EditText
-            android:id="@+id/etGtinInput"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:hint="أدخل رقم GTIN-13 أو EPC"
-            android:inputType="text"
-            android:paddingHorizontal="8dp"
-            android:textSize="13sp"
-            android:background="@android:drawable/editbox_background"/>
+        <!-- شريط الإدخال والزر -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <Button
-            android:id="@+id/btnCheckGtin"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/button_bg"
-            android:text="فحص القطعة"
-            android:textColor="@color/white"
-            android:textSize="13sp"/>
+            <EditText
+                android:id="@+id/etGtinInput"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:hint="أدخل GTIN-13 أو رمز EPC"
+                android:inputType="text"
+                android:paddingHorizontal="10dp"
+                android:textSize="13sp"
+                android:background="@android:drawable/editbox_background"/>
+
+            <Button
+                android:id="@+id/btnCheckGtin"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/button_bg"
+                android:text="فحص القطعة"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:paddingHorizontal="14dp"/>
+        </LinearLayout>
+
+        <!-- 🟢 بطاقة عرض نتائج استعلام MIRA ID الفاخرة -->
+        <LinearLayout
+            android:id="@+id/cardMiraResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="6dp"
+            android:padding="10dp"
+            android:background="@drawable/rectangle_bg"
+            android:visibility="gone">
+
+            <!-- مؤشر التحميل أثناء جلب البيانات -->
+            <LinearLayout
+                android:id="@+id/layoutMiraLoading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingVertical="4dp"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="جاري التحقق من MIRA Digital Trust..."
+                    android:textColor="#555555"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- تفاصيل النتيجة المرجعة من المخدم -->
+            <LinearLayout
+                android:id="@+id/layoutMiraDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tvMiraStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="حالة القطعة"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#2E7D32" />
+
+                <TextView
+                    android:id="@+id/tvMiraProductName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="اسم المنتج: -"
+                    android:textColor="#222222"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp" />
+
+                <TextView
+                    android:id="@+id/tvMiraEpcGtin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="الكود: -"
+                    android:textColor="#666666"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
