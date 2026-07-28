@@ -671,18 +671,33 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     Log.d(TAG, "MIRA Response Code: " + responseCode);
                     Log.d(TAG, "MIRA Response Body: " + response.toString());
 
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (responseCode == 200) {
-                                    Toast.makeText(mContext, "✅ تم التسجيل في MIRA بنجاح!", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(mContext, "❌ فشل الإرسال (رمز: " + responseCode + ")", Toast.LENGTH_LONG).show();
-                                }
-                            }
-                        });
-                    }
+                    // ✅ الكود المحدث لاستخراج وعرض نتيجة الفحص التفصيلية:
+final String jsonResponseStr = response.toString();
+
+if (getActivity() != null) {
+    getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                JSONObject jsonObject = new JSONObject(jsonResponseStr);
+                
+                if (responseCode == 200) {
+                    // استخراج الرسالة أو حالة الاعتماد من رد MIRA
+                    String statusMsg = jsonObject.optString("message", "تم التحقق بنجاح");
+                    String status = jsonObject.optString("status", "AUTHORIZED");
+                    
+                    Toast.makeText(mContext, "✅ MIRA: " + statusMsg + " [" + status + "]", Toast.LENGTH_LONG).show();
+                } else {
+                    String errorMsg = jsonObject.optString("message", "رمز غير مسجل أو غير مصرح");
+                    Toast.makeText(mContext, "❌ تنبيه MIRA: " + errorMsg, Toast.LENGTH_LONG).show();
+                }
+            } catch (Exception e) {
+                Toast.makeText(mContext, "نتيجة الاستجابة: " + jsonResponseStr, Toast.LENGTH_SHORT).show();
+            }
+        }
+    });
+}
+
 
                 } catch (final Exception e) {
                     Log.e(TAG, "MIRA Connection Error", e);
