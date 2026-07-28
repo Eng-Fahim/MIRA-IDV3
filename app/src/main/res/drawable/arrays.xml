@@ -1,5 +1,0 @@
-<!-- في res/values/arrays.xml -->
-<string-array name="mira_api_urls">
-    <item>https://ams.ibreg.org/wp-json/mira-gate/v1/authorize</item>
-    <item>https://ams.ibreg.org/wp-json/mira-gate/v1/heartbeat</item>
-</string-array>
