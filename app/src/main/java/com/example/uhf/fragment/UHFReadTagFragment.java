@@ -45,7 +45,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class UHFReadTagFragment extends KeyDwonFragment {
     private static final String TAG = "UHFReadTagFragment";
-    //private boolean loopFlag = false;
     private int inventoryFlag = 1;
     MyAdapter adapter;
     Button BtClear;
@@ -59,8 +58,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
     private CheckBox cbEPC_Tam;
 
+    // 🟢 عناصر الفحص اليدوي GTIN-13 / EPC
+    private EditText etGtinInput;
+    private Button btnCheckGtin;
 
-    long maxRunTime = 36000000L;//毫秒
+    long maxRunTime = 36000000L;
     EditText etTime;
     Button BtInventory;
     public static ListView LvTags;
@@ -85,7 +87,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             } else if (msg.what == MSG_STOP) {
                 stopInventory();
             }
-
         }
     };
 
@@ -129,22 +130,37 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         BtInventory = (Button) getView().findViewById(R.id.BtInventory);
         cbPhase = (CheckBox) getView().findViewById(R.id.cbPhase);
 
+        // 🟢 ربط عناصر الفحص اليدوي الجديدة
+        etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
+        btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
+
+        if (btnCheckGtin != null) {
+            btnCheckGtin.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String inputCode = etGtinInput.getText().toString().trim();
+                    if (TextUtils.isEmpty(inputCode)) {
+                        Toast.makeText(mContext, "يرجى إدخال رمز GTIN-13 أو EPC للفحص", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    sendTagToMiraServer(inputCode, "-50");
+                }
+            });
+        }
+
         LvTags = (ListView) getView().findViewById(R.id.LvTags);
         adapter = new MyAdapter(mContext);
         
-        // -------------------------------------------------------------
         // 🟢 ميزة الاختبار اليدوي: عند الضغط الطويل على زر Clear
-        // -------------------------------------------------------------
         BtClear.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                String mockEpc = "E28011700000020123456789"; // EPC تجريبي
+                String mockEpc = "E28011700000020123456789";
                 sendTagToMiraServer(mockEpc, "-65");
                 Toast.makeText(mContext, "تم إرسال قراءة تجريبية لـ MIRA: " + mockEpc, Toast.LENGTH_SHORT).show();
                 return true;
             }
         });
-        // -------------------------------------------------------------
 
         LvTags.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -169,7 +185,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         BtInventory.setOnClickListener(new BtInventoryClickListener());
 
         initFilter(getView());
-
         initEPCTamperAlarm(getView());
         tv_count.setText(mContext.tagList.size() + "");
         tv_total.setText(total + "");
@@ -198,12 +213,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
         etData.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
             @Override
             public void afterTextChanged(Editable s) {
@@ -223,12 +236,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 } else if (rbUser.isChecked()) {
                     filterBank = RFIDWithUHFUART.Bank_USER;
                 }
-                etLen.getText().toString();
+                
                 if (etLen.getText().toString().isEmpty()) {
                     mContext.showToast("数据长度不能为空");
                     return;
                 }
-                etOffset.getText().toString();
                 if (etOffset.getText().toString().isEmpty()) {
                     mContext.showToast("起始地址不能为空");
                     return;
@@ -237,7 +249,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 int len = StringUtils.toInt(etLen.getText().toString(), 0);
                 String data = etData.getText().toString().trim();
                 if (len > 0) {
-                    String rex = "[\\da-fA-F]*"; //匹配正则表达式，数据为十六进制格式
+                    String rex = "[\\da-fA-F]*";
                     if (data.isEmpty() || !data.matches(rex)) {
                         mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
                         return;
@@ -249,7 +261,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         mContext.showToast(R.string.uhf_msg_set_filter_fail);
                     }
                 } else {
-                    //禁用过滤
                     String dataStr = "";
                     if (mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, dataStr)
                             && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_TID, 0, 0, dataStr)
@@ -260,32 +271,25 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     }
                 }
                 cbFilter.setChecked(false);
-
             }
         });
-        CheckBox cb_filter = (CheckBox) view.findViewById(R.id.cb_filter);
+
         rbEPC.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (rbEPC.isChecked()) {
-                    etOffset.setText("32");
-                }
+                if (rbEPC.isChecked()) etOffset.setText("32");
             }
         });
         rbTID.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (rbTID.isChecked()) {
-                    etOffset.setText("0");
-                }
+                if (rbTID.isChecked()) etOffset.setText("0");
             }
         });
         rbUser.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (rbUser.isChecked()) {
-                    etOffset.setText("0");
-                }
+                if (rbUser.isChecked()) etOffset.setText("0");
             }
         });
     }
@@ -295,9 +299,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         cbEPC_Tam.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    //mContext.mReader.setEPCAndTamperAlarmMode();
-                } else {
+                if (!isChecked) {
                     mContext.mReader.setEPCMode();
                 }
             }
@@ -308,35 +310,29 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     public void onPause() {
         Log.i(TAG, "UHFReadTagFragment.onPause");
         super.onPause();
-
-        // 停止识别
         stopInventory();
     }
 
-    /**
-     * 添加数据到列表中
-     *
-     * @param
-     */
     private void addDataToList(UHFTAGInfo info) {
-    String epc = info.getEPC();
-    if (StringUtils.isNotEmpty(epc)) {
-        boolean[] exists = new boolean[1];
-        int insertIndex = CheckUtils.getInsertIndex(mContext.tagList, info, exists);
-        if (exists[0]) {
-            info.setCount(mContext.tagList.get(insertIndex).getCount() + 1);
-            mContext.tagList.set(insertIndex, info);
-        } else {
-            mContext.tagList.add(insertIndex, info);
-            tv_count.setText(String.valueOf(adapter.getCount()));
+        String epc = info.getEPC();
+        if (StringUtils.isNotEmpty(epc)) {
+            boolean[] exists = new boolean[1];
+            int insertIndex = CheckUtils.getInsertIndex(mContext.tagList, info, exists);
+            if (exists[0]) {
+                info.setCount(mContext.tagList.get(insertIndex).getCount() + 1);
+                mContext.tagList.set(insertIndex, info);
+            } else {
+                mContext.tagList.add(insertIndex, info);
+                tv_count.setText(String.valueOf(adapter.getCount()));
+            }
+            tv_total.setText(String.valueOf(++total));
+            adapter.notifyDataSetChanged();
+            
+            // 🟢 إرسال التاغ الممسوح تلقائياً لمنصة MIRA
+            sendTagToMiraServer(epc, info.getRssi());
         }
-        tv_total.setText(String.valueOf(++total));
-        adapter.notifyDataSetChanged();
-        
-        // ⬅️ أضف هذا السطر هنا لإرسال التاغ فوراً إلى سيرفر MIRA:
-        sendTagToMiraServer(epc, info.getRssi());
     }
-}
+
     public class BtClearClickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
@@ -358,18 +354,12 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         @Override
         public void onCheckedChanged(RadioGroup group, int checkedId) {
             if (checkedId == RbInventorySingle.getId()) {
-                // 单步识别
                 inventoryFlag = 0;
-//                cbFilter.setChecked(false);
-//                cbFilter.setVisibility(View.INVISIBLE);
             } else if (checkedId == RbInventoryLoop.getId()) {
-                // 单标签循环识别
                 inventoryFlag = 1;
-//                cbFilter.setVisibility(View.VISIBLE);
             }
         }
     }
-
 
     public class BtInventoryClickListener implements OnClickListener {
         @Override
@@ -380,9 +370,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
     private void readTag() {
         cbFilter.setChecked(false);
-        if (BtInventory.getText().equals(mContext.getString(R.string.btInventory))) {// 识别标签
+        if (BtInventory.getText().equals(mContext.getString(R.string.btInventory))) {
             switch (inventoryFlag) {
-                case 0:// 单步
+                case 0:
                     startTime = SystemClock.elapsedRealtime();
                     UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
                     if (uhftagInfo != null) {
@@ -391,10 +381,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         mContext.playSound(1);
                     } else {
                         mContext.showToast(R.string.uhf_msg_inventory_fail);
-//					mContext.playSound(2);
                     }
                     break;
-                case 1:// 单标签循环
+                case 1:
                     mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
                         @Override
                         public void callback(UHFTAGInfo uhftagInfo) {
@@ -410,7 +399,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     InventoryParameter inventoryParameter = new InventoryParameter();
                     inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
                     if (mContext.mReader.startInventoryTag(inventoryParameter)) {
-                        //--
                         String time = etTime.getText().toString();
                         if (time.length() > 0 && time.startsWith(".")) {
                             etTime.setText("");
@@ -424,8 +412,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         }
                         handler.removeMessages(MSG_STOP);
                         handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
-                        Log.i(TAG, "maxRunTime maxRunTime=" + maxRunTime);
-                        //--
 
                         BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
                         mContext.loopFlag = true;
@@ -440,7 +426,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 default:
                     break;
             }
-        } else {// 停止识别
+        } else {
             stopInventory();
             setTotalTime();
         }
@@ -456,14 +442,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         RbInventoryLoop.setEnabled(enabled);
         cbFilter.setEnabled(enabled);
         btnSetFilter.setEnabled(enabled);
-//        BtClear.setEnabled(enabled);
         cbEPC_Tam.setEnabled(enabled);
         cbPhase.setEnabled(enabled);
     }
 
-    /**
-     * 停止识别
-     */
     private void stopInventory() {
         handler.removeMessages(MSG_STOP);
         if (mContext.loopFlag) {
@@ -494,7 +476,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         if (uhftagInfo.getUser() != null && uhftagInfo.getUser().length() > 0) {
             data += "\nUSER:" + uhftagInfo.getUser();
         }
-        if(uhftagInfo.getM775AuthenticationInfo()!=null){
+        if (uhftagInfo.getM775AuthenticationInfo() != null) {
             data += "\nMessage:" + uhftagInfo.getM775AuthenticationInfo().getMessageHex();
             data += "\nResponse:" + uhftagInfo.getM775AuthenticationInfo().getResponseHex();
             data += "\nShortenedTid:" + uhftagInfo.getM775AuthenticationInfo().getShortenedTidHex();
@@ -506,9 +488,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     public void myOnKeyDwon() {
         readTag();
     }
-
-
-    //-----------------------------
 
     public final class ViewHolder {
         public TextView tvTag;
@@ -569,12 +548,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             } else {
                 mContext.selectIndex = select;
             }
-
         }
     }
 
-
-    //*********************************************************
     private Object objectLock = new Object();
     PlaySoundThread playSoundThread = null;
 
@@ -635,80 +611,79 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }
     }
-    // ✅ دالة إرسال التاغ الممسوح إلى سيرفر MIRA مع معالجة الأخطاء والـ Toast
-private void sendTagToMiraServer(final String epc, final String rssi) {
-    new Thread(new Runnable() {
-        @Override
-        public void run() {
-            java.io.InputStream inputStream = null;
-            try {
-                java.net.URL url = new java.net.URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setDoOutput(true);
 
-                org.json.JSONObject jsonParam = new org.json.JSONObject();
-                jsonParam.put("epc", epc);
-                jsonParam.put("gate_id", "handheld_c72");
+    // 🟢 دالة إرسال التاغ / GTIN إلى خادم MIRA مع معالجة الاستجابة مباشرة
+    private void sendTagToMiraServer(final String epc, final String rssi) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                java.io.InputStream inputStream = null;
+                try {
+                    java.net.URL url = new java.net.URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+                    conn.setDoOutput(true);
 
-                try (java.io.OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonParam.toString().getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                }
+                    org.json.JSONObject jsonParam = new org.json.JSONObject();
+                    jsonParam.put("epc", epc);
+                    jsonParam.put("gate_id", "handheld_c72");
 
-                final int responseCode = conn.getResponseCode();
-                
-                // قراءة الرد سواء كان ناجحاً أم خطأ
-                if (responseCode >= 200 && responseCode < 300) {
-                    inputStream = conn.getInputStream();
-                } else {
-                    inputStream = conn.getErrorStream();
-                }
+                    try (java.io.OutputStream os = conn.getOutputStream()) {
+                        byte[] input = jsonParam.toString().getBytes("utf-8");
+                        os.write(input, 0, input.length);
+                    }
 
-                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "utf-8"));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line.trim());
-                }
+                    final int responseCode = conn.getResponseCode();
+                    
+                    if (responseCode >= 200 && responseCode < 300) {
+                        inputStream = conn.getInputStream();
+                    } else {
+                        inputStream = conn.getErrorStream();
+                    }
 
-                Log.d(TAG, "MIRA API Response Code: " + responseCode);
-                Log.d(TAG, "MIRA API Response Body: " + response.toString());
+                    java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "utf-8"));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line.trim());
+                    }
 
-                // عرض النتيجة للمستخدم على Main Thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (responseCode == 200) {
-                                Toast.makeText(mContext, "✅ تم التسجيل في MIRA بنجاح!", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(mContext, "❌ فشل الإرسال (رمز: " + responseCode + ")", Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "MIRA API Response Code: " + responseCode);
+                    Log.d(TAG, "MIRA API Response Body: " + response.toString());
+
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (responseCode == 200) {
+                                    Toast.makeText(mContext, "✅ تم التسجيل في MIRA بنجاح!", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(mContext, "❌ فشل الإرسال (رمز: " + responseCode + ")", Toast.LENGTH_LONG).show();
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+                    }
 
-            } catch (final Exception e) {
-                Log.e(TAG, "MIRA Connection Error", e);
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(mContext, "⚠️ خطأ اتصال: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            } finally {
-                if (inputStream != null) {
-                    try { inputStream.close(); } catch (Exception ignored) {}
+                } catch (final Exception e) {
+                    Log.e(TAG, "MIRA Connection Error", e);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(mContext, "⚠️ خطأ اتصال: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                } finally {
+                    if (inputStream != null) {
+                        try { inputStream.close(); } catch (Exception ignored) {}
+                    }
                 }
             }
-        }
-    }).start();
-}
+        }).start();
+    }
 }
