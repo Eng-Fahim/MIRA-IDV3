@@ -65,10 +65,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     @ViewInject(R.id.btnSetFreHop)
     private Button btnSetFreHop;
 
-    @ViewInject(R.id.btnSetProtocol)
-    private Button btnSetProtocol;
-    @ViewInject(R.id.SpinnerAgreement)
-    private Spinner SpinnerAgreement;
+    
 
     @ViewInject(R.id.btnSetLinkParams)
     private Button btnSetLinkParams;
