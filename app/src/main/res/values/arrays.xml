@@ -33,6 +33,12 @@
         <item>US</item>
     </string-array>
 
+    <string-array name="working_modes">
+    <item>🇾🇪 MIRA ID Yemen (محسّن)</item>
+    <item>🌍 MIRA ID Standard</item>
+    <item>📡 RFID Only</item>
+    <item>🛠️ Development Mode</item>
+</string-array>
     <!-- GB label Lock -->
     <string-array name="storageArea">
         <item>Label information area</item>
