@@ -26,6 +26,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
+import com.example.uhf.manager.MiraSettingsManager;
 import com.example.uhf.tools.UIHelper;
 import com.example.uhf.view.CircleSeekBar;
 import com.example.uhf.view.RadarView;
@@ -45,6 +46,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * MIRA Radar Location Fragment
+ * 
+ * يجمع بين:
+ * - رادار تحديد موقع Chainway UHF
+ * - استعلام MIRA ID عن القطع
+ * - بطاقة معلومات القطعة
+ * - عداد إحصائيات (مصرح/ممنوع/غير معروف)
+ * - وضع محاكاة للتطوير
+ * - تطبيق فوري للإعدادات من MiraSettingsManager
+ */
 public class UHFRadarLocationFragment extends KeyDwonFragment {
 
     public final String TAG = "UHFRadarLocationFrag";
@@ -59,8 +71,9 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     private String targetEpc;
     int progress = 5;
 
-    // 🟢 متغير للتحكم في وضع المحاكاة (true = محاكاة، false = جهاز حقيقي)
-    private static final boolean SIMULATION_MODE = true;
+    // 🟢 مدير الإعدادات
+    private MiraSettingsManager settingsManager;
+    private boolean simulationMode;
 
     // 🟢 MIRA Radar - عناصر جديدة
     private LinearLayout layoutMiraRadarInfo;
@@ -82,6 +95,10 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         super.onActivityCreated(savedInstanceState);
         mContext = (UHFMainActivity) getActivity();
         mContext.currentFragment = this;
+
+        // 🟢 تهيئة مدير الإعدادات
+        settingsManager = MiraSettingsManager.getInstance(mContext);
+        simulationMode = settingsManager.getBoolean("radar_simulation", true);
 
         radarView = getView().findViewById(R.id.radarView);
         etEPC = getView().findViewById(R.id.etRadarEPC);
@@ -114,6 +131,21 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
             }
         });
 
+        // 🟢 الاستماع لتغييرات الإعدادات
+        settingsManager.registerListener("radar_fragment", new MiraSettingsManager.SettingsChangeListener() {
+            @Override
+            public void onSettingChanged(String key, Object value) {
+                if ("radar_simulation".equals(key)) {
+                    simulationMode = (Boolean) value;
+                    // إذا كان الرادار شغال، أعد تشغيله بالوضع الجديد
+                    if (inventoryFlag) {
+                        stopLocated();
+                        startLocated();
+                    }
+                }
+            }
+        });
+
         getView().post(new Runnable() {
             @Override
             public void run() {
@@ -135,22 +167,33 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     // 🟢 استعلام MIRA API عن قطعة محددة
     // =============================================
     private void queryMiraItem(final String epc) {
+        // التحقق من إعداد الاستعلام التلقائي
+        if (!settingsManager.getBoolean("auto_query_mira", true)) {
+            return;
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    String apiUrl = settingsManager.getString("mira_api_url", 
+                        "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    String apiKey = settingsManager.getString("mira_api_key", 
+                        "mira_gate_test071234567890abcdefghijklmnop");
+                    String gateId = settingsManager.getString("mira_gate_id", "handheld_c72");
+
+                    URL url = new URL(apiUrl);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                    conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
+                    conn.setRequestProperty("X-MIRA-API-Key", apiKey);
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
                     conn.setDoOutput(true);
 
                     JSONObject jsonParam = new JSONObject();
                     jsonParam.put("epc", epc);
-                    jsonParam.put("gate_id", "handheld_c72");
+                    jsonParam.put("gate_id", gateId);
 
                     try (OutputStream os = conn.getOutputStream()) {
                         byte[] input = jsonParam.toString().getBytes("utf-8");
@@ -207,6 +250,14 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     // 🟢 تحديث بطاقة معلومات MIRA Radar
     // =============================================
     private void updateMiraRadarInfo(String epc, JSONObject decision, JSONObject item) {
+        // التحقق من إعداد إظهار البطاقة
+        if (!settingsManager.getBoolean("show_mira_card", true)) {
+            if (layoutMiraRadarInfo != null) {
+                layoutMiraRadarInfo.setVisibility(View.GONE);
+            }
+            return;
+        }
+
         if (layoutMiraRadarInfo != null) {
             layoutMiraRadarInfo.setVisibility(View.VISIBLE);
         }
@@ -284,7 +335,7 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         if (layoutMiraRadarInfo != null) layoutMiraRadarInfo.setVisibility(View.GONE);
 
         // 🟢 وضع المحاكاة للتطوير
-        if (SIMULATION_MODE) {
+        if (simulationMode) {
             startSimulatedRadar();
             return;
         }
@@ -355,48 +406,47 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     private float simulationAngle = 0;
     private Random random = new Random();
 
-    // 🟢 محاكي الرادار للتطوير والاختبار (مُبسط)
-private void startSimulatedRadar() {
-    final String epcToTrack = targetEpc;
-    
-    // استعلام MIRA مباشرة
-    queryMiraItem(epcToTrack);
-    
-    // بدء محاكاة الرادار
-    radarView.startRadar();
-    seekBarPower.setEnabled(true);
-    inventoryFlag = true;
-    btStart.setEnabled(false);
-    etEPC.setEnabled(false);
-    
-    simulationRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!inventoryFlag) return;
-            
-            // تحديث الزاوية
-            simulationAngle += 5;
-            if (simulationAngle >= 360) simulationAngle = 0;
-            
-            // توليد نقاط وهمية (باستخدام List فارغة أو بدون setTag)
-            List<RadarLocationEntity> simulatedList = new ArrayList<>();
-            
-            // نستخدم كائنات فارغة فقط للعرض
-            // RadarLocationEntity قد لا يدعم setTag/setEPC
-            
-            radarView.bindingData(simulatedList, epcToTrack);
-            radarView.setRotation(-simulationAngle);
-            
-            mContext.playSound(1);
-            
-            simulationHandler.postDelayed(this, 1500);
-        }
-    };
-    simulationHandler.post(simulationRunnable);
-    
-    Toast.makeText(mContext, "⚡ وضع المحاكاة", Toast.LENGTH_SHORT).show();
-    Log.i(TAG, "Simulated radar started");
-}
+    private void startSimulatedRadar() {
+        final String epcToTrack = targetEpc;
+        
+        // استعلام MIRA مباشرة
+        queryMiraItem(epcToTrack);
+        
+        // بدء محاكاة الرادار
+        radarView.startRadar();
+        seekBarPower.setEnabled(true);
+        inventoryFlag = true;
+        btStart.setEnabled(false);
+        etEPC.setEnabled(false);
+        
+        simulationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!inventoryFlag) return;
+                
+                // تحديث الزاوية
+                simulationAngle += 5;
+                if (simulationAngle >= 360) simulationAngle = 0;
+                
+                // توليد نقاط وهمية
+                List<RadarLocationEntity> simulatedList = new ArrayList<>();
+                
+                radarView.bindingData(simulatedList, epcToTrack);
+                radarView.setRotation(-simulationAngle);
+                
+                // صوت فقط إذا كان مفعلاً
+                if (settingsManager.getBoolean("sound_on_scan", true)) {
+                    mContext.playSound(1);
+                }
+                
+                simulationHandler.postDelayed(this, 1500);
+            }
+        };
+        simulationHandler.post(simulationRunnable);
+        
+        Toast.makeText(mContext, "⚡ وضع المحاكاة", Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "Simulated radar started");
+    }
 
     // =============================================
     // 🟢 دالة الإيقاف (موحدة)
@@ -406,7 +456,7 @@ private void startSimulatedRadar() {
         if (!inventoryFlag) return;
 
         // إيقاف المحاكاة إذا كانت مفعلة
-        if (SIMULATION_MODE) {
+        if (simulationMode) {
             if (simulationRunnable != null) {
                 simulationHandler.removeCallbacks(simulationRunnable);
             }
@@ -442,6 +492,8 @@ private void startSimulatedRadar() {
     @Override
     public void onResume() {
         super.onResume();
+        // تحديث الإعدادات عند العودة للتبويب
+        simulationMode = settingsManager.getBoolean("radar_simulation", true);
     }
 
     @Override
@@ -453,6 +505,10 @@ private void startSimulatedRadar() {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // إلغاء تسجيل المستمع
+        if (settingsManager != null) {
+            settingsManager.unregisterListener("radar_fragment");
+        }
     }
 
     @Override
@@ -477,4 +533,4 @@ private void startSimulatedRadar() {
             }
         });
     }
-}
+                }
