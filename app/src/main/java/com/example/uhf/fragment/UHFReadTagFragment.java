@@ -54,6 +54,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -93,11 +94,11 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private TextView tvMiraStatusBadge;
     private View statusIndicator;
 
-    // 🟢 عناصر ملخص الجرد التجميعي (Batch Mode Summary)
+    // 🟢 عناصر جدول الجرد التجميعي الموحد (Unified Batch Summary Table)
     private TextView tvBatchTotal;
-    private TextView tvBatchAllowed;
-    private TextView tvBatchBlocked;
-    private TextView tvBatchUnknown;
+    private TextView tvBatchAllowed, tvBatchAllowedPct;
+    private TextView tvBatchBlocked, tvBatchBlockedPct;
+    private TextView tvBatchUnknown, tvBatchUnknownPct;
 
     private int countAllowed = 0;
     private int countBlocked = 0;
@@ -179,11 +180,14 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
-        // 🟢 ربط عناصر ملخص الجرد التجميعي
+        // 🟢 ربط عناصر جدول الجرد التجميعي الموحد
         tvBatchTotal = (TextView) getView().findViewById(R.id.tvBatchTotal);
         tvBatchAllowed = (TextView) getView().findViewById(R.id.tvBatchAllowed);
+        tvBatchAllowedPct = (TextView) getView().findViewById(R.id.tvBatchAllowedPct);
         tvBatchBlocked = (TextView) getView().findViewById(R.id.tvBatchBlocked);
+        tvBatchBlockedPct = (TextView) getView().findViewById(R.id.tvBatchBlockedPct);
         tvBatchUnknown = (TextView) getView().findViewById(R.id.tvBatchUnknown);
+        tvBatchUnknownPct = (TextView) getView().findViewById(R.id.tvBatchUnknownPct);
 
         // 🟢 ربط عناصر بطاقة MIRA
         cardMiraResult = getView().findViewById(R.id.cardMiraResult);
@@ -422,7 +426,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
 
-            // 🟢 الاستعلام التلقائي من خادم MIRA لكل الشريحة المجلوبة
+            // 🟢 الاستعلام التلقائي من خادم MIRA لكل وسم مجلوب
             sendTagToMiraServer(epc, info.getRssi());
         }
     }
@@ -457,10 +461,21 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (tvBatchTotal != null) tvBatchTotal.setText(String.valueOf(processedTagsMap.size()));
+                    int totalRead = processedTagsMap.size();
+                    if (tvBatchTotal != null) tvBatchTotal.setText(String.valueOf(totalRead));
                     if (tvBatchAllowed != null) tvBatchAllowed.setText(String.valueOf(countAllowed));
                     if (tvBatchBlocked != null) tvBatchBlocked.setText(String.valueOf(countBlocked));
                     if (tvBatchUnknown != null) tvBatchUnknown.setText(String.valueOf(countUnknown));
+
+                    if (totalRead > 0) {
+                        if (tvBatchAllowedPct != null) tvBatchAllowedPct.setText(String.format(Locale.US, "%.1f%%", (countAllowed * 100.0 / totalRead)));
+                        if (tvBatchBlockedPct != null) tvBatchBlockedPct.setText(String.format(Locale.US, "%.1f%%", (countBlocked * 100.0 / totalRead)));
+                        if (tvBatchUnknownPct != null) tvBatchUnknownPct.setText(String.format(Locale.US, "%.1f%%", (countUnknown * 100.0 / totalRead)));
+                    } else {
+                        if (tvBatchAllowedPct != null) tvBatchAllowedPct.setText("0%");
+                        if (tvBatchBlockedPct != null) tvBatchBlockedPct.setText("0%");
+                        if (tvBatchUnknownPct != null) tvBatchUnknownPct.setText("0%");
+                    }
                 }
             });
         }
@@ -889,7 +904,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                         allowed = decision.optBoolean("allowed", false);
                                     }
 
-                                    // 🟢 تحديث إحصائيات الجرد التجميعي (Batch Counters)
+                                    // 🟢 تحديث الجدول الموحد للجرد التجميعي (Batch Counters Table)
                                     if (!processedTagsMap.containsKey(epc)) {
                                         processedTagsMap.put(epc, true);
                                         if (hasItem && allowed) {
