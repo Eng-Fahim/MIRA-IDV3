@@ -1,7 +1,7 @@
 package com.example.uhf.fragment;
 
-
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -23,6 +23,7 @@ import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.uhf.BuildConfig;
 import com.example.uhf.R;
@@ -35,6 +36,14 @@ import com.rscja.deviceapi.entity.FastInventoryEntity;
 import com.rscja.deviceapi.entity.Gen2Entity;
 import com.rscja.deviceapi.entity.InventoryModeEntity;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,26 +61,24 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private Spinner spPower;
 
     @ViewInject(R.id.spFreHop)
-    private Spinner spFreHop; //频点列表
+    private Spinner spFreHop;
     @ViewInject(R.id.btnSetFreHop)
-    private Button btnSetFreHop; //设置频点设置
+    private Button btnSetFreHop;
 
     @ViewInject(R.id.btnSetProtocol)
-    private Button btnSetProtocol; //设置协议
+    private Button btnSetProtocol;
     @ViewInject(R.id.SpinnerAgreement)
-    private Spinner SpinnerAgreement; //协议列表
-
+    private Spinner SpinnerAgreement;
 
     @ViewInject(R.id.btnSetLinkParams)
-    private Button btnSetLinkParams; //设置链路参数
+    private Button btnSetLinkParams;
     @ViewInject(R.id.btnGetLinkParams)
-    private Button btnGetLinkParams; //获取链路参数
+    private Button btnGetLinkParams;
     @ViewInject(R.id.splinkParams)
-    private Spinner splinkParams; //链路参数列表
-
+    private Spinner splinkParams;
 
     @ViewInject(R.id.spMemoryBank)
-    private Spinner spMemoryBank;   // 盘点区域
+    private Spinner spMemoryBank;
     @ViewInject(R.id.llMemoryBankParams)
     private LinearLayout llMemoryBankParams;
     @ViewInject(R.id.etOffset)
@@ -84,17 +91,16 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     @ViewInject(R.id.btnGetMemoryBank)
     Button btnGetMemoryBank;
 
-
     @ViewInject(R.id.cbTagFocus)
-    private CheckBox cbTagFocus; //打开tagFocus
+    private CheckBox cbTagFocus;
     @ViewInject(R.id.cbFastID)
-    private CheckBox cbFastID; //打开FastID
+    private CheckBox cbFastID;
 
     @ViewInject(R.id.rb_America)
-    private RadioButton rb_America; //美国频点
+    private RadioButton rb_America;
     @ViewInject(R.id.rb_Others)
-    private RadioButton rb_Others; //其他频点
-    private ArrayAdapter adapter; //频点列表适配器
+    private RadioButton rb_Others;
+    private ArrayAdapter adapter;
 
     @ViewInject(R.id.spFastInventory)
     private Spinner spFastInventory;
@@ -106,12 +112,20 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     @ViewInject(R.id.btnFactoryReset)
     private Button btnFactoryReset;
 
+    // 🟢 عناصر MIRA Bridge الجديدة
+    private Spinner spMiraApiUrl;
+    private EditText etMiraApiKey;
+    private EditText etMiraGateId;
+    private Button btnTestMiraConnection;
+    private TextView tvMiraConnectionStatus;
+    private CheckBox cbSoundOnScan, cbShowMiraCard, cbRadarSimulation, cbAutoQueryMira;
+    private Button btnSaveAllSettings;
 
     private DisplayMetrics metrics;
     private AlertDialog dialog;
 
     private Handler mHandler = new Handler();
-    private int arrPow; //输出功率
+    private int arrPow;
 
     private String[] arrayMode;
     private List<Integer> arrayLinkValue;
@@ -134,6 +148,18 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         btnSetPower = root.findViewById(R.id.btnSetPower);
         btnSetFastInventory = root.findViewById(R.id.btnSetFastInventory);
         btnGetFastInventory = root.findViewById(R.id.btnGetFastInventory);
+
+        // 🟢 ربط عناصر MIRA Bridge الجديدة
+        spMiraApiUrl = root.findViewById(R.id.spMiraApiUrl);
+        etMiraApiKey = root.findViewById(R.id.etMiraApiKey);
+        etMiraGateId = root.findViewById(R.id.etMiraGateId);
+        btnTestMiraConnection = root.findViewById(R.id.btnTestMiraConnection);
+        tvMiraConnectionStatus = root.findViewById(R.id.tvMiraConnectionStatus);
+        cbSoundOnScan = root.findViewById(R.id.cbSoundOnScan);
+        cbShowMiraCard = root.findViewById(R.id.cbShowMiraCard);
+        cbRadarSimulation = root.findViewById(R.id.cbRadarSimulation);
+        cbAutoQueryMira = root.findViewById(R.id.cbAutoQueryMira);
+        btnSaveAllSettings = root.findViewById(R.id.btnSaveAllSettings);
 
         llMemoryBankParams.setVisibility(View.GONE);
         spMemoryBank.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -164,7 +190,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_item, arrayLinkTest);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             splinkParams.setAdapter(adapter);
-
         }
 
         arrayLinkValue = new ArrayList<>();
@@ -201,6 +226,11 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
         cbTagFocus.setOnCheckedChangeListener(new OnMyCheckedChangedListener());
         cbFastID.setOnCheckedChangeListener(new OnMyCheckedChangedListener());
+
+        // 🟢 مستمعات أزرار MIRA
+        btnTestMiraConnection.setOnClickListener(v -> testMiraConnection());
+        btnSaveAllSettings.setOnClickListener(v -> saveAllSettings());
+
         String ver = mContext.mReader.getVersion();
         arrPow = R.array.arrayPower;
         ArrayAdapter adapter = ArrayAdapter.createFromResource(mContext, arrPow, android.R.layout.simple_spinner_item);
@@ -222,16 +252,159 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }).start();
     }
 
-    /**
-     * 工作模式下拉列表点击选中item监听
-     */
-    public class MyOnTouchListener implements AdapterView.OnItemSelectedListener {
+    // =============================================
+    // 🟢 دوال MIRA Bridge الجديدة
+    // =============================================
 
+    /**
+     * اختبار الاتصال بـ MIRA Server
+     */
+    private void testMiraConnection() {
+        tvMiraConnectionStatus.setText("🟡 جاري الاختبار...");
+        tvMiraConnectionStatus.setTextColor(Color.parseColor("#FF9800"));
+
+        new Thread(() -> {
+            try {
+                String apiUrl = spMiraApiUrl.getSelectedItem().toString();
+                String apiKey = etMiraApiKey.getText().toString().trim();
+                String gateId = etMiraGateId.getText().toString().trim();
+
+                if (apiKey.isEmpty()) {
+                    mHandler.post(() -> {
+                        tvMiraConnectionStatus.setText("🔴 الرجاء إدخال مفتاح API");
+                        tvMiraConnectionStatus.setTextColor(Color.RED);
+                    });
+                    return;
+                }
+
+                URL url = new URL(apiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("X-MIRA-API-Key", apiKey);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setDoOutput(true);
+
+                JSONObject json = new JSONObject();
+                json.put("epc", "TEST_CONNECTION");
+                json.put("gate_id", gateId);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = json.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                final int code = conn.getResponseCode();
+                
+                // قراءة الاستجابة
+                InputStream is = (code >= 200 && code < 300) 
+                    ? conn.getInputStream() 
+                    : conn.getErrorStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line.trim());
+                }
+                
+                Log.d(TAG, "MIRA Test Response: " + code + " - " + response.toString());
+
+                mHandler.post(() -> {
+                    if (code >= 200 && code < 300) {
+                        tvMiraConnectionStatus.setText("🟢 متصل بـ MIRA Server ✓");
+                        tvMiraConnectionStatus.setTextColor(Color.parseColor("#4CAF50"));
+                        mContext.showToast("✅ تم الاتصال بـ MIRA بنجاح");
+                    } else if (code == 401) {
+                        tvMiraConnectionStatus.setText("🔴 غير مصرح - تحقق من مفتاح API");
+                        tvMiraConnectionStatus.setTextColor(Color.RED);
+                        mContext.showToast("❌ مفتاح API غير صحيح");
+                    } else {
+                        tvMiraConnectionStatus.setText("🔴 فشل الاتصال (كود: " + code + ")");
+                        tvMiraConnectionStatus.setTextColor(Color.RED);
+                        mContext.showToast("❌ فشل الاتصال - كود: " + code);
+                    }
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "MIRA Connection Test Error: " + e.getMessage());
+                mHandler.post(() -> {
+                    tvMiraConnectionStatus.setText("🔴 خطأ: " + e.getMessage());
+                    tvMiraConnectionStatus.setTextColor(Color.RED);
+                    mContext.showToast("❌ خطأ في الاتصال");
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * حفظ جميع إعدادات MIRA Bridge
+     */
+    private void saveAllSettings() {
+        String apiUrl = spMiraApiUrl.getSelectedItem().toString();
+        String apiKey = etMiraApiKey.getText().toString().trim();
+        String gateId = etMiraGateId.getText().toString().trim();
+        boolean soundOnScan = cbSoundOnScan.isChecked();
+        boolean showMiraCard = cbShowMiraCard.isChecked();
+        boolean radarSimulation = cbRadarSimulation.isChecked();
+        boolean autoQueryMira = cbAutoQueryMira.isChecked();
+
+        // 🟢 حفظ في SharedPreferences
+        android.content.SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", android.content.Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("mira_api_url", apiUrl);
+        editor.putString("mira_api_key", apiKey);
+        editor.putString("mira_gate_id", gateId);
+        editor.putBoolean("sound_on_scan", soundOnScan);
+        editor.putBoolean("show_mira_card", showMiraCard);
+        editor.putBoolean("radar_simulation", radarSimulation);
+        editor.putBoolean("auto_query_mira", autoQueryMira);
+        editor.apply();
+
+        mContext.showToast("✅ تم حفظ جميع إعدادات MIRA Bridge");
+        Toast.makeText(mContext, "تم حفظ " + (apiKey.length() > 0 ? "✅" : "⚠️ تحقق من مفتاح API"), Toast.LENGTH_SHORT).show();
+        
+        Log.d(TAG, "MIRA Settings Saved: url=" + apiUrl + ", gate=" + gateId);
+    }
+
+    /**
+     * تحميل الإعدادات المحفوظة
+     */
+    private void loadMiraSettings() {
+        android.content.SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", android.content.Context.MODE_PRIVATE);
+        
+        String apiUrl = prefs.getString("mira_api_url", "");
+        String apiKey = prefs.getString("mira_api_key", "mira_gate_test071234567890abcdefghijklmnop");
+        String gateId = prefs.getString("mira_gate_id", "handheld_c72");
+        
+        if (!apiUrl.isEmpty() && spMiraApiUrl != null) {
+            // محاولة تحديد الـ URL المحفوظ في الـ Spinner
+            for (int i = 0; i < spMiraApiUrl.getCount(); i++) {
+                if (spMiraApiUrl.getItemAtPosition(i).toString().equals(apiUrl)) {
+                    spMiraApiUrl.setSelection(i);
+                    break;
+                }
+            }
+        }
+        
+        if (etMiraApiKey != null) etMiraApiKey.setText(apiKey);
+        if (etMiraGateId != null) etMiraGateId.setText(gateId);
+        
+        if (cbSoundOnScan != null) cbSoundOnScan.setChecked(prefs.getBoolean("sound_on_scan", true));
+        if (cbShowMiraCard != null) cbShowMiraCard.setChecked(prefs.getBoolean("show_mira_card", true));
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(prefs.getBoolean("radar_simulation", true));
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(prefs.getBoolean("auto_query_mira", true));
+    }
+
+    // =============================================
+    // 🟢 دوال RFID الأصلية (محفوظة بالكامل)
+    // =============================================
+
+    public class MyOnTouchListener implements AdapterView.OnItemSelectedListener {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             if (spFrequency.getSelectedItem().toString().equals(getString(R.string.United_States_Standard))) {
-                //TODO ll_freHop.setVisibility(View.VISIBLE);
-                rb_America.setChecked(true); //默认美国频点
+                rb_America.setChecked(true);
             } else if (position != 3) {
                 ll_freHop.setVisibility(View.GONE);
             }
@@ -239,12 +412,10 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
-
         }
     }
 
     public class SetFreOnclickListener implements OnClickListener {
-
         @Override
         public void onClick(View v) {
             String strMode = spFrequency.getSelectedItem().toString();
@@ -265,7 +436,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             if (mode != -1) {
                 int count = spFrequency.getCount();
                 int idx = getModeIndex(mode);
-                //Log.e("TAG", "spMode  " + getResources().getStringArray(R.array.arrayMode).length + "  " + (idx > count - 1 ? count - 1 : idx));
                 spFrequency.setSelection(Math.min(idx, count - 1));
                 if (showToast) mContext.showToast(R.string.uhf_msg_read_frequency_succ);
             } else {
@@ -274,14 +444,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         });
     }
 
-
-    /**
-     * 获取链路参数
-     */
     public void getLinkParams(boolean showToast) {
         int link = mContext.mReader.getRFLink();
         Log.e(TAG, "getLinkParams()=" + link);
-
         mHandler.post(() -> {
             if (link == -1) {
                 mContext.showToast(R.string.uhf_msg_get_para_fail);
@@ -347,7 +512,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }
     }
 
-
     private int getModeIndex(String modeName) {
         for (int i = 0; i < arrayMode.length; i++) {
             if (arrayMode[i].equals(modeName)) {
@@ -361,7 +525,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         return getModeIndex(getModeName(mode));
     }
 
-
     public class GetFreOnclickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
@@ -370,7 +533,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     }
 
     public class OnMyCheckedChangedListener implements CompoundButton.OnCheckedChangeListener {
-
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             switch (buttonView.getId()) {
@@ -381,12 +543,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                         } else {
                             cbTagFocus.setText(R.string.tagFocus);
                         }
-                        mContext.showToast(
-                                R.string.uhf_msg_set_succ);
+                        mContext.showToast(R.string.uhf_msg_set_succ);
                     } else {
-                        mContext.showToast(
-                                R.string.uhf_msg_set_fail);
-//                        mContext.playSound(2);
+                        mContext.showToast(R.string.uhf_msg_set_fail);
                     }
                     break;
                 case R.id.cbFastID:
@@ -396,12 +555,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                         } else {
                             cbFastID.setText(R.string.fastID);
                         }
-                        mContext.showToast(
-                                R.string.uhf_msg_set_succ);
+                        mContext.showToast(R.string.uhf_msg_set_succ);
                     } else {
-                        mContext.showToast(
-                                R.string.uhf_msg_set_fail);
-//                        mContext.playSound(2);
+                        mContext.showToast(R.string.uhf_msg_set_fail);
                     }
                     break;
             }
@@ -430,61 +586,46 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             mContext.showToast(R.string.uhf_msg_set_power_succ);
         } else {
             mContext.showToast(R.string.uhf_msg_set_power_fail);
-//            mContext.playSound(2);
         }
     }
 
-    /**
-     * 设置频点
-     *
-     * @param value 频点数值
-     * @return 是否设置成功
-     */
     private boolean setFreHop(float value) {
         boolean result = mContext.mReader.setFreHop(value);
         if (result) {
-
-            mContext.showToast(
-                    R.string.uhf_msg_set_frehop_succ);
+            mContext.showToast(R.string.uhf_msg_set_frehop_succ);
         } else {
-            mContext.showToast(
-                    R.string.uhf_msg_set_frehop_fail);
-//            mContext.playSound(2);
+            mContext.showToast(R.string.uhf_msg_set_frehop_fail);
         }
         return result;
     }
 
     @Override
     public void onClick(View v) {
-        // TODO Auto-generated method stub
         switch (v.getId()) {
-            case R.id.btnSetFreHop: //设置频点
-//			showFrequencyDialog();
+            case R.id.btnSetFreHop:
                 View view = spFreHop.getSelectedView();
                 if (view instanceof TextView) {
                     String freHop = ((TextView) view).getText().toString().trim();
-                    setFreHop(Float.valueOf(freHop)); //设置频点
+                    setFreHop(Float.valueOf(freHop));
                 }
                 break;
-            case R.id.btnSetProtocol: //设置协议
+            case R.id.btnSetProtocol:
                 if (mContext.mReader.setProtocol(SpinnerAgreement.getSelectedItemPosition())) {
                     mContext.showToast(R.string.setAgreement_succ);
                 } else {
                     mContext.showToast(R.string.setAgreement_fail);
-//                    mContext.playSound(2);
                 }
                 break;
-            case R.id.btnSetLinkParams: //设置链路参数
+            case R.id.btnSetLinkParams:
                 int index = splinkParams.getSelectedItemPosition();
                 int link = arrayLinkValue.get(index);
                 if (mContext.mReader.setRFLink(link)) {
                     mContext.showToast(R.string.uhf_msg_set_succ);
                 } else {
                     mContext.showToast(R.string.uhf_msg_set_fail);
-//                    mContext.playSound(2);
                 }
                 break;
-            case R.id.btnGetLinkParams: //获取链路参数
+            case R.id.btnGetLinkParams:
                 getLinkParams(true);
                 break;
             case R.id.rbEPC:
@@ -544,21 +685,15 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }
     }
 
-    /**
-     * 显示频点设置
-     */
     private void showFrequencyDialog() {
         if (dialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-//	        builder.setTitle(R.string.btSetFrequency);
             View view = getActivity().getLayoutInflater().inflate(R.layout.uhf_dialog_frequency, null);
             ListView listView = (ListView) view.findViewById(R.id.listView_frequency);
             ImageView iv = (ImageView) view.findViewById(R.id.iv_dismissDialog);
             iv.setOnClickListener(new OnClickListener() {
-
                 @Override
                 public void onClick(View v) {
-                    // TODO Auto-generated method stub
                     dialog.dismiss();
                 }
             });
@@ -566,18 +701,15 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             String[] strArr = getResources().getStringArray(R.array.arrayFreHop);
             listView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.item_text1, strArr));
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    // TODO Auto-generated method stub
                     if (view instanceof TextView) {
                         TextView tv = (TextView) view;
                         float value = Float.valueOf(tv.getText().toString().trim());
-                        setFreHop(value); //设置频点
+                        setFreHop(value);
                         dialog.dismiss();
                     }
                 }
-
             });
 
             builder.setView(view);
@@ -594,12 +726,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }
     }
 
-
-    /**
-     * 获取屏幕宽度
-     *
-     * @return
-     */
     public int getWindowWidth() {
         if (metrics == null) {
             metrics = new DisplayMetrics();
@@ -608,11 +734,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         return metrics.widthPixels;
     }
 
-    /**
-     * 获取屏幕高度
-     *
-     * @return
-     */
     public int getWindowHeight() {
         if (metrics == null) {
             metrics = new DisplayMetrics();
@@ -623,7 +744,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
     @OnClick(R.id.rb_America)
     public void onClick_rbAmerica(View view) {
-
         adapter = ArrayAdapter.createFromResource(mContext, R.array.arrayFreHop_us, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spFreHop.setAdapter(adapter);
@@ -631,11 +751,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
     @OnClick(R.id.rb_Others)
     public void onClick_rbOthers(View view) {
-
         adapter = ArrayAdapter.createFromResource(mContext, R.array.arrayFreHop, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spFreHop.setAdapter(adapter);
-
     }
 
     private void getMomoryBank(boolean isToast) {
@@ -666,7 +784,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         if (isToast) {
             mContext.showToast(result ? getString(R.string.get_succ) : getString(R.string.get_fail) + " mode=" + mode.getMode());
         }
-
     }
 
     private void setMemoryBank() {
@@ -714,7 +831,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         mContext.showToast(result ? R.string.setting_succ : R.string.setting_fail);
     }
 
-
     private void getFastInventory(boolean showToast) {
         FastInventoryEntity entity = mContext.mReader.getFastInventoryMode();
         mHandler.post(() -> {
@@ -739,7 +855,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         mContext.showToast(flag ? R.string.setting_succ : R.string.setting_fail);
     }
 
-
     @OnClick(R.id.btnFactoryReset)
     public void btnFactoryResetClick(View view) {
         if (mContext.mReader.factoryReset()) {
@@ -756,6 +871,4 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             mContext.showToast(R.string.reset_fail);
         }
     }
-
-
 }
