@@ -1,6 +1,8 @@
 package com.example.uhf.fragment;
 
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,6 +30,7 @@ import android.widget.Toast;
 import com.example.uhf.BuildConfig;
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
+import com.example.uhf.manager.MiraSettingsManager;
 import com.example.uhf.tools.StringUtils;
 import com.lidroid.xutils.ViewUtils;
 import com.lidroid.xutils.view.annotation.ViewInject;
@@ -47,13 +50,26 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * MIRA Bridge Configuration Fragment
+ * 
+ * يجمع بين:
+ * - إعدادات MIRA Bridge (API, Cloud Sync, Working Modes)
+ * - إعدادات قارئ RFID الأصلية (محفوظة بالكامل)
+ * - حفظ محلي + سحابي في MIRA ID Database
+ * - تطبيق فوري للإعدادات على جميع أجزاء التطبيق
+ */
 public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private static final String TAG = "UHFSetFragment";
     private UHFMainActivity mContext;
 
+    // =============================================
+    // 🟢 إعدادات RFID الأصلية
+    // =============================================
     private Button btnSetFre;
     private Button btnGetFre;
     private Spinner spFrequency;
+    
     @ViewInject(R.id.ll_freHop)
     private LinearLayout ll_freHop;
 
@@ -62,54 +78,69 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
     @ViewInject(R.id.spFreHop)
     private Spinner spFreHop;
+    
     @ViewInject(R.id.btnSetFreHop)
     private Button btnSetFreHop;
 
-    
-
     @ViewInject(R.id.btnSetLinkParams)
     private Button btnSetLinkParams;
+    
     @ViewInject(R.id.btnGetLinkParams)
     private Button btnGetLinkParams;
+    
     @ViewInject(R.id.splinkParams)
     private Spinner splinkParams;
 
     @ViewInject(R.id.spMemoryBank)
     private Spinner spMemoryBank;
+    
     @ViewInject(R.id.llMemoryBankParams)
     private LinearLayout llMemoryBankParams;
+    
     @ViewInject(R.id.etOffset)
     private EditText etOffset;
+    
     @ViewInject(R.id.etLength)
     private EditText etLength;
+    
     private int[] arrayMemoryBankValue;
+    
     @ViewInject(R.id.btnSetMemoryBank)
     Button btnSetMemoryBank;
+    
     @ViewInject(R.id.btnGetMemoryBank)
     Button btnGetMemoryBank;
 
     @ViewInject(R.id.cbTagFocus)
     private CheckBox cbTagFocus;
+    
     @ViewInject(R.id.cbFastID)
     private CheckBox cbFastID;
 
     @ViewInject(R.id.rb_America)
     private RadioButton rb_America;
+    
     @ViewInject(R.id.rb_Others)
     private RadioButton rb_Others;
+    
     private ArrayAdapter adapter;
 
     @ViewInject(R.id.spFastInventory)
     private Spinner spFastInventory;
+    
     @ViewInject(R.id.btnSetFastInventory)
     private Button btnSetFastInventory;
+    
     @ViewInject(R.id.btnGetFastInventory)
     private Button btnGetFastInventory;
 
     @ViewInject(R.id.btnFactoryReset)
     private Button btnFactoryReset;
 
-    // 🟢 عناصر MIRA Bridge الجديدة
+    // =============================================
+    // 🟢 عناصر MIRA Bridge
+    // =============================================
+    private Spinner spWorkingMode;
     private Spinner spMiraApiUrl;
     private EditText etMiraApiKey;
     private EditText etMiraGateId;
@@ -118,14 +149,16 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private CheckBox cbSoundOnScan, cbShowMiraCard, cbRadarSimulation, cbAutoQueryMira;
     private Button btnSaveAllSettings;
 
+    // =============================================
+    // 🟢 متغيرات عامة
+    // =============================================
     private DisplayMetrics metrics;
     private AlertDialog dialog;
-
     private Handler mHandler = new Handler();
     private int arrPow;
-
     private String[] arrayMode;
     private List<Integer> arrayLinkValue;
+    private MiraSettingsManager settingsManager;
 
     Spinner spSessionID, spInventoried;
     Button btnSetSession, btnGetSession;
@@ -136,17 +169,18 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         View root = inflater.inflate(R.layout.fragment_uhf_set, container, false);
         ViewUtils.inject(this, root);
 
+        // ربط عناصر RFID
         spSessionID = root.findViewById(R.id.spSession);
         spInventoried = root.findViewById(R.id.spTarget);
         btnGetSession = root.findViewById(R.id.btnGetSession);
         btnSetSession = root.findViewById(R.id.btnSetSession);
-
         btnGetPower = root.findViewById(R.id.btnGetPower);
         btnSetPower = root.findViewById(R.id.btnSetPower);
         btnSetFastInventory = root.findViewById(R.id.btnSetFastInventory);
         btnGetFastInventory = root.findViewById(R.id.btnGetFastInventory);
 
-        // 🟢 ربط عناصر MIRA Bridge الجديدة
+        // 🟢 ربط عناصر MIRA Bridge
+        spWorkingMode = root.findViewById(R.id.spWorkingMode);
         spMiraApiUrl = root.findViewById(R.id.spMiraApiUrl);
         etMiraApiKey = root.findViewById(R.id.etMiraApiKey);
         etMiraGateId = root.findViewById(R.id.etMiraGateId);
@@ -164,10 +198,8 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 llMemoryBankParams.setVisibility(position == 2 || position == 3 ? View.VISIBLE : View.GONE);
             }
-
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
         return root;
@@ -179,6 +211,10 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         mContext = (UHFMainActivity) getActivity();
         mContext.currentFragment = this;
 
+        // 🟢 تهيئة مدير الإعدادات
+        settingsManager = MiraSettingsManager.getInstance(mContext);
+
+        // تهيئة مصفوفات RFID
         arrayMode = getResources().getStringArray(R.array.arrayMode);
         int[] arrayLink = getResources().getIntArray(R.array.arrayLinkValue);
         if (BuildConfig.Test) {
@@ -195,49 +231,63 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }
         arrayMemoryBankValue = getResources().getIntArray(R.array.arrayMemoryBankValue);
 
-        btnSetFre = (Button) getView().findViewById(R.id.btnSetFrequency);
-        btnGetFre = (Button) getView().findViewById(R.id.btnGetFrequency);
-
-        spFrequency = (Spinner) getView().findViewById(R.id.spFrequency);
+        // ربط أزرار RFID
+        btnSetFre = getView().findViewById(R.id.btnSetFrequency);
+        btnGetFre = getView().findViewById(R.id.btnGetFrequency);
+        spFrequency = getView().findViewById(R.id.spFrequency);
         spFrequency.setOnItemSelectedListener(new MyOnTouchListener());
 
         btnSetFre.setOnClickListener(new SetFreOnclickListener());
         btnGetFre.setOnClickListener(new GetFreOnclickListener());
-
         btnSetFreHop.setOnClickListener(this);
-
         btnSetLinkParams.setOnClickListener(this);
         btnGetLinkParams.setOnClickListener(this);
-
         btnSetMemoryBank.setOnClickListener(this);
         btnGetMemoryBank.setOnClickListener(this);
-
         btnGetSession.setOnClickListener(this);
         btnSetSession.setOnClickListener(this);
-
         btnGetPower.setOnClickListener(v -> getPower(true));
         btnSetPower.setOnClickListener(v -> setPower());
-
         btnGetFastInventory.setOnClickListener(v -> getFastInventory(true));
 
         cbTagFocus.setOnCheckedChangeListener(new OnMyCheckedChangedListener());
         cbFastID.setOnCheckedChangeListener(new OnMyCheckedChangedListener());
 
-        // 🟢 مستمعات أزرار MIRA
+        // 🟢 مستمعات MIRA Bridge
         btnTestMiraConnection.setOnClickListener(v -> testMiraConnection());
         btnSaveAllSettings.setOnClickListener(v -> saveAllSettings());
 
+        // 🟢 مستمع نمط العمل
+        if (spWorkingMode != null) {
+            spWorkingMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    switch (position) {
+                        case 0: applyMiraYemenMode(); break;
+                        case 1: applyMiraStandardMode(); break;
+                        case 2: applyRfidOnlyMode(); break;
+                        case 3: applyDevMode(); break;
+                    }
+                }
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {}
+            });
+        }
+
+        // تهيئة Spinner الطاقة
         String ver = mContext.mReader.getVersion();
         arrPow = R.array.arrayPower;
-        ArrayAdapter adapter = ArrayAdapter.createFromResource(mContext, arrPow, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spPower.setAdapter(adapter);
+        ArrayAdapter powerAdapter = ArrayAdapter.createFromResource(mContext, arrPow, android.R.layout.simple_spinner_item);
+        powerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spPower.setAdapter(powerAdapter);
+
+        // 🟢 تحميل الإعدادات المحفوظة
+        loadMiraSettings();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
         new Thread(() -> {
             getFre(false);
             getLinkParams(false);
@@ -246,10 +296,82 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             getSession();
             getFastInventory(false);
         }).start();
+        
+        // 🟢 تحميل الإعدادات من السحابة
+        loadSettingsFromCloud();
     }
 
     // =============================================
-    // 🟢 دوال MIRA Bridge الجديدة
+    // 🟢 أنماط العمل (Working Modes)
+    // =============================================
+
+    /**
+     * نمط MIRA ID Yemen - الأمثل للسوق اليمني
+     */
+    private void applyMiraYemenMode() {
+        mContext.mReader.setFrequencyMode((byte) 0x01); // China 840-845 MHz
+        mContext.mReader.setPower(26);                   // طاقة محسّنة
+        mContext.mReader.setRFLink(0);                   // أسرع بروفايل
+        
+        cbSoundOnScan.setChecked(true);
+        cbShowMiraCard.setChecked(true);
+        cbAutoQueryMira.setChecked(true);
+        cbRadarSimulation.setChecked(false);
+        
+        settingsManager.saveSetting("working_mode", "mira_yemen");
+        saveAllSettings();
+        
+        Toast.makeText(mContext, "🇾🇪 تم تطبيق نمط MIRA ID Yemen", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * نمط MIRA ID Standard - العالمي
+     */
+    private void applyMiraStandardMode() {
+        mContext.mReader.setFrequencyMode((byte) 0x08); // US Standard
+        mContext.mReader.setPower(22);
+        
+        cbSoundOnScan.setChecked(true);
+        cbShowMiraCard.setChecked(true);
+        cbAutoQueryMira.setChecked(true);
+        cbRadarSimulation.setChecked(true);
+        
+        settingsManager.saveSetting("working_mode", "mira_standard");
+        saveAllSettings();
+        
+        Toast.makeText(mContext, "🌍 تم تطبيق النمط العالمي", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * نمط RFID فقط
+     */
+    private void applyRfidOnlyMode() {
+        cbSoundOnScan.setChecked(true);
+        cbShowMiraCard.setChecked(false);
+        cbAutoQueryMira.setChecked(false);
+        cbRadarSimulation.setChecked(false);
+        
+        settingsManager.saveSetting("working_mode", "rfid_only");
+        saveAllSettings();
+        
+        Toast.makeText(mContext, "📡 نمط RFID فقط", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * نمط المطور
+     */
+    private void applyDevMode() {
+        cbRadarSimulation.setChecked(true);
+        cbAutoQueryMira.setChecked(false);
+        
+        settingsManager.saveSetting("working_mode", "dev");
+        saveAllSettings();
+        
+        Toast.makeText(mContext, "🛠️ نمط المطور", Toast.LENGTH_SHORT).show();
+    }
+
+    // =============================================
+    // 🟢 دوال MIRA Bridge
     // =============================================
 
     /**
@@ -293,7 +415,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
                 final int code = conn.getResponseCode();
                 
-                // قراءة الاستجابة
                 InputStream is = (code >= 200 && code < 300) 
                     ? conn.getInputStream() 
                     : conn.getErrorStream();
@@ -334,7 +455,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     }
 
     /**
-     * حفظ جميع إعدادات MIRA Bridge
+     * حفظ جميع الإعدادات (محلي + سحابي)
      */
     private void saveAllSettings() {
         String apiUrl = spMiraApiUrl.getSelectedItem().toString();
@@ -345,9 +466,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         boolean radarSimulation = cbRadarSimulation.isChecked();
         boolean autoQueryMira = cbAutoQueryMira.isChecked();
 
-        // 🟢 حفظ في SharedPreferences
-        android.content.SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", android.content.Context.MODE_PRIVATE);
-        android.content.SharedPreferences.Editor editor = prefs.edit();
+        // 🟢 حفظ محلي في SharedPreferences
+        SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
         editor.putString("mira_api_url", apiUrl);
         editor.putString("mira_api_key", apiKey);
         editor.putString("mira_gate_id", gateId);
@@ -357,24 +478,86 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         editor.putBoolean("auto_query_mira", autoQueryMira);
         editor.apply();
 
-        mContext.showToast("✅ تم حفظ جميع إعدادات MIRA Bridge");
-        Toast.makeText(mContext, "تم حفظ " + (apiKey.length() > 0 ? "✅" : "⚠️ تحقق من مفتاح API"), Toast.LENGTH_SHORT).show();
-        
+        // 🟢 إشعار مدير الإعدادات بالتغيير
+        settingsManager.saveSetting("sound_on_scan", soundOnScan);
+        settingsManager.saveSetting("show_mira_card", showMiraCard);
+        settingsManager.saveSetting("radar_simulation", radarSimulation);
+        settingsManager.saveSetting("auto_query_mira", autoQueryMira);
+
+        // 🟢 حفظ سحابي في MIRA ID
+        saveSettingsToCloud();
+
+        mContext.showToast("✅ تم حفظ جميع الإعدادات");
         Log.d(TAG, "MIRA Settings Saved: url=" + apiUrl + ", gate=" + gateId);
     }
 
     /**
-     * تحميل الإعدادات المحفوظة
+     * حفظ الإعدادات في MIRA ID Cloud
+     */
+    private void saveSettingsToCloud() {
+        new Thread(() -> {
+            try {
+                String apiUrl = "https://ams.ibreg.org/wp-json/mira-gate/v1/settings";
+                String apiKey = etMiraApiKey.getText().toString().trim();
+                String gateId = etMiraGateId.getText().toString().trim();
+                
+                URL url = new URL(apiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("X-MIRA-API-Key", apiKey);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setDoOutput(true);
+                
+                JSONObject body = new JSONObject();
+                body.put("gate_id", gateId);
+                
+                JSONObject settings = new JSONObject();
+                settings.put("api_url", spMiraApiUrl.getSelectedItem().toString());
+                settings.put("api_key", apiKey);
+                settings.put("gate_id", gateId);
+                settings.put("sound_on_scan", cbSoundOnScan.isChecked());
+                settings.put("show_mira_card", cbShowMiraCard.isChecked());
+                settings.put("radar_simulation", cbRadarSimulation.isChecked());
+                settings.put("auto_query_mira", cbAutoQueryMira.isChecked());
+                settings.put("frequency_mode", spFrequency.getSelectedItemPosition());
+                settings.put("power", spPower.getSelectedItemPosition() + 1);
+                settings.put("link_profile", splinkParams.getSelectedItemPosition());
+                
+                body.put("settings", settings);
+                
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(body.toString().getBytes("utf-8"));
+                }
+                
+                final int code = conn.getResponseCode();
+                
+                mHandler.post(() -> {
+                    if (code == 200) {
+                        Log.d(TAG, "Cloud save successful");
+                    } else {
+                        Log.w(TAG, "Cloud save failed with code: " + code);
+                    }
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Cloud save error: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    /**
+     * تحميل الإعدادات المحفوظة محلياً
      */
     private void loadMiraSettings() {
-        android.content.SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
         
         String apiUrl = prefs.getString("mira_api_url", "");
         String apiKey = prefs.getString("mira_api_key", "mira_gate_test071234567890abcdefghijklmnop");
         String gateId = prefs.getString("mira_gate_id", "handheld_c72");
         
         if (!apiUrl.isEmpty() && spMiraApiUrl != null) {
-            // محاولة تحديد الـ URL المحفوظ في الـ Spinner
             for (int i = 0; i < spMiraApiUrl.getCount(); i++) {
                 if (spMiraApiUrl.getItemAtPosition(i).toString().equals(apiUrl)) {
                     spMiraApiUrl.setSelection(i);
@@ -390,6 +573,79 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         if (cbShowMiraCard != null) cbShowMiraCard.setChecked(prefs.getBoolean("show_mira_card", true));
         if (cbRadarSimulation != null) cbRadarSimulation.setChecked(prefs.getBoolean("radar_simulation", true));
         if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(prefs.getBoolean("auto_query_mira", true));
+
+        // 🟢 استعادة نمط العمل
+        String workingMode = prefs.getString("working_mode", "mira_yemen");
+        if (spWorkingMode != null) {
+            switch (workingMode) {
+                case "mira_yemen": spWorkingMode.setSelection(0); break;
+                case "mira_standard": spWorkingMode.setSelection(1); break;
+                case "rfid_only": spWorkingMode.setSelection(2); break;
+                case "dev": spWorkingMode.setSelection(3); break;
+            }
+        }
+    }
+
+    /**
+     * جلب الإعدادات من MIRA ID Cloud
+     */
+    private void loadSettingsFromCloud() {
+        new Thread(() -> {
+            try {
+                String gateId = etMiraGateId.getText().toString().trim();
+                String apiKey = etMiraApiKey.getText().toString().trim();
+                
+                if (gateId.isEmpty() || apiKey.isEmpty()) return;
+                
+                URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/settings/" + gateId);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("X-MIRA-API-Key", apiKey);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                
+                int code = conn.getResponseCode();
+                if (code == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) response.append(line);
+                    
+                    JSONObject json = new JSONObject(response.toString());
+                    JSONObject cloudSettings = json.getJSONObject("settings");
+                    
+                    mHandler.post(() -> applyCloudSettings(cloudSettings));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Cloud load error: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    /**
+     * تطبيق الإعدادات السحابية على الواجهة
+     */
+    private void applyCloudSettings(JSONObject settings) {
+        try {
+            if (settings.has("sound_on_scan")) 
+                cbSoundOnScan.setChecked(settings.getBoolean("sound_on_scan"));
+            if (settings.has("show_mira_card")) 
+                cbShowMiraCard.setChecked(settings.getBoolean("show_mira_card"));
+            if (settings.has("radar_simulation")) 
+                cbRadarSimulation.setChecked(settings.getBoolean("radar_simulation"));
+            if (settings.has("auto_query_mira")) 
+                cbAutoQueryMira.setChecked(settings.getBoolean("auto_query_mira"));
+            
+            // إشعار مدير الإعدادات
+            settingsManager.saveSetting("sound_on_scan", cbSoundOnScan.isChecked());
+            settingsManager.saveSetting("show_mira_card", cbShowMiraCard.isChecked());
+            settingsManager.saveSetting("radar_simulation", cbRadarSimulation.isChecked());
+            settingsManager.saveSetting("auto_query_mira", cbAutoQueryMira.isChecked());
+            
+            Toast.makeText(mContext, "✅ تم تحميل الإعدادات من MIRA Cloud", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Apply settings error: " + e.getMessage());
+        }
     }
 
     // =============================================
@@ -405,10 +661,8 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                 ll_freHop.setVisibility(View.GONE);
             }
         }
-
         @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-        }
+        public void onNothingSelected(AdapterView<?> parent) {}
     }
 
     public class SetFreOnclickListener implements OnClickListener {
@@ -445,7 +699,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         Log.e(TAG, "getLinkParams()=" + link);
         mHandler.post(() -> {
             if (link == -1) {
-                mContext.showToast(R.string.uhf_msg_get_para_fail);
+                if (showToast) mContext.showToast(R.string.uhf_msg_get_para_fail);
                 return;
             }
             if (arrayLinkValue.contains(link)) {
@@ -461,58 +715,36 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     }
 
     private int getMode(String modeName) {
-        if (modeName.equals(getString(R.string.China_Standard_840_845MHz))) {
-            return 0x01;
-        } else if (modeName.equals(getString(R.string.China_Standard_920_925MHz))) {
-            return 0x02;
-        } else if (modeName.equals(getString(R.string.ETSI_Standard))) {
-            return 0x04;
-        } else if (modeName.equals(getString(R.string.United_States_Standard))) {
-            return 0x08;
-        } else if (modeName.equals(getString(R.string.Korea))) {
-            return 0x16;
-        } else if (modeName.equals(getString(R.string.Japan))) {
-            return 0x32;
-        } else if (modeName.equals(getString(R.string.South_Africa_915_919MHz))) {
-            return 0x33;
-        } else if (modeName.equals(getString(R.string.New_Zealand))) {
-            return 0x34;
-        } else if (modeName.equals(getString(R.string.Morocco))) {
-            return 0x80;
-        }
+        if (modeName.equals(getString(R.string.China_Standard_840_845MHz))) return 0x01;
+        else if (modeName.equals(getString(R.string.China_Standard_920_925MHz))) return 0x02;
+        else if (modeName.equals(getString(R.string.ETSI_Standard))) return 0x04;
+        else if (modeName.equals(getString(R.string.United_States_Standard))) return 0x08;
+        else if (modeName.equals(getString(R.string.Korea))) return 0x16;
+        else if (modeName.equals(getString(R.string.Japan))) return 0x32;
+        else if (modeName.equals(getString(R.string.South_Africa_915_919MHz))) return 0x33;
+        else if (modeName.equals(getString(R.string.New_Zealand))) return 0x34;
+        else if (modeName.equals(getString(R.string.Morocco))) return 0x80;
         return 0x08;
     }
 
     private String getModeName(int mode) {
         switch (mode) {
-            case 0x01:
-                return getString(R.string.China_Standard_840_845MHz);
-            case 0x02:
-                return getString(R.string.China_Standard_920_925MHz);
-            case 0x04:
-                return getString(R.string.ETSI_Standard);
-            case 0x08:
-                return getString(R.string.United_States_Standard);
-            case 0x16:
-                return getString(R.string.Korea);
-            case 0x32:
-                return getString(R.string.Japan);
-            case 0x33:
-                return getString(R.string.South_Africa_915_919MHz);
-            case 0x34:
-                return getString(R.string.New_Zealand);
-            case 0x80:
-                return getString(R.string.Morocco);
-            default:
-                return getString(R.string.United_States_Standard);
+            case 0x01: return getString(R.string.China_Standard_840_845MHz);
+            case 0x02: return getString(R.string.China_Standard_920_925MHz);
+            case 0x04: return getString(R.string.ETSI_Standard);
+            case 0x08: return getString(R.string.United_States_Standard);
+            case 0x16: return getString(R.string.Korea);
+            case 0x32: return getString(R.string.Japan);
+            case 0x33: return getString(R.string.South_Africa_915_919MHz);
+            case 0x34: return getString(R.string.New_Zealand);
+            case 0x80: return getString(R.string.Morocco);
+            default: return getString(R.string.United_States_Standard);
         }
     }
 
     private int getModeIndex(String modeName) {
         for (int i = 0; i < arrayMode.length; i++) {
-            if (arrayMode[i].equals(modeName)) {
-                return i;
-            }
+            if (arrayMode[i].equals(modeName)) return i;
         }
         return 0;
     }
@@ -534,11 +766,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             switch (buttonView.getId()) {
                 case R.id.cbTagFocus:
                     if (mContext.mReader.setTagFocus(isChecked)) {
-                        if (isChecked) {
-                            cbTagFocus.setText(R.string.tagFocus_off);
-                        } else {
-                            cbTagFocus.setText(R.string.tagFocus);
-                        }
+                        cbTagFocus.setText(isChecked ? R.string.tagFocus_off : R.string.tagFocus);
                         mContext.showToast(R.string.uhf_msg_set_succ);
                     } else {
                         mContext.showToast(R.string.uhf_msg_set_fail);
@@ -546,11 +774,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                     break;
                 case R.id.cbFastID:
                     if (mContext.mReader.setFastID(isChecked)) {
-                        if (isChecked) {
-                            cbFastID.setText(R.string.fastID_off);
-                        } else {
-                            cbFastID.setText(R.string.fastID);
-                        }
+                        cbFastID.setText(isChecked ? R.string.fastID_off : R.string.fastID);
                         mContext.showToast(R.string.uhf_msg_set_succ);
                     } else {
                         mContext.showToast(R.string.uhf_msg_set_fail);
@@ -605,7 +829,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                     setFreHop(Float.valueOf(freHop));
                 }
                 break;
-            
             case R.id.btnSetLinkParams:
                 int index = splinkParams.getSelectedItemPosition();
                 int link = arrayLinkValue.get(index);
@@ -628,7 +851,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                 getMomoryBank(true);
                 break;
             case R.id.btnGetSession:
-                Log.e("getSession", String.valueOf(getSession()));
                 if (getSession()) {
                     mContext.showToast(R.string.uhf_msg_get_para_succ);
                 } else {
@@ -656,15 +878,14 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     }
 
     private void setSession() {
-        int seesionid = spSessionID.getSelectedItemPosition();
+        int sessionId = spSessionID.getSelectedItemPosition();
         int inventoried = spInventoried.getSelectedItemPosition();
-        if (seesionid < 0 || inventoried < 0) {
-            return;
-        }
+        if (sessionId < 0 || inventoried < 0) return;
+        
         Gen2Entity p = mContext.mReader.getGen2();
         if (p != null) {
             p.setQueryTarget(inventoried);
-            p.setQuerySession(seesionid);
+            p.setQuerySession(sessionId);
             if (mContext.mReader.setGen2(p)) {
                 mContext.showToast(R.string.uhf_msg_set_succ);
             } else {
@@ -679,14 +900,9 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         if (dialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             View view = getActivity().getLayoutInflater().inflate(R.layout.uhf_dialog_frequency, null);
-            ListView listView = (ListView) view.findViewById(R.id.listView_frequency);
-            ImageView iv = (ImageView) view.findViewById(R.id.iv_dismissDialog);
-            iv.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
-                }
-            });
+            ListView listView = view.findViewById(R.id.listView_frequency);
+            ImageView iv = view.findViewById(R.id.iv_dismissDialog);
+            iv.setOnClickListener(v -> dialog.dismiss());
 
             String[] strArr = getResources().getStringArray(R.array.arrayFreHop);
             listView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.item_text1, strArr));
@@ -695,8 +911,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     if (view instanceof TextView) {
                         TextView tv = (TextView) view;
-                        float value = Float.valueOf(tv.getText().toString().trim());
-                        setFreHop(value);
+                        setFreHop(Float.valueOf(tv.getText().toString().trim()));
                         dialog.dismiss();
                     }
                 }
@@ -790,6 +1005,7 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         int position = spMemoryBank.getSelectedItemPosition();
         boolean result = false;
         int offset = 0, length = 6;
+        
         if (position == 0) {
             result = mContext.mReader.setEPCMode();
         } else if (position == 1) {
@@ -801,21 +1017,23 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         } else if (position == 3) {
             offset = StringUtils.toInt(etOffset.getText().toString().trim(), 0);
             length = StringUtils.toInt(etLength.getText().toString().trim(), 4);
-            InventoryModeEntity entity = new InventoryModeEntity
-                    .Builder()
+            InventoryModeEntity entity = new InventoryModeEntity.Builder()
                     .setMode(InventoryModeEntity.MODE_EPC_RESERVED)
                     .setReservedOffset(offset)
                     .setReservedLength(length)
                     .build();
             result = mContext.mReader.setEPCAndTIDUserMode(entity);
         } else if (position == 4) {
-            InventoryModeEntity entity = new InventoryModeEntity
-                    .Builder()
+            InventoryModeEntity entity = new InventoryModeEntity.Builder()
                     .setMode(InventoryModeEntity.MODE_LED_TAG)
                     .build();
             result = mContext.mReader.setEPCAndTIDUserMode(entity);
         } else if (position == 5) {
-            result = mContext.mReader.setEPCAndTIDUserMode(new InventoryModeEntity.Builder().setMode(InventoryModeEntity.MODE_EPC_TID_M775AUTHENTICATION).build());
+            result = mContext.mReader.setEPCAndTIDUserMode(
+                new InventoryModeEntity.Builder()
+                    .setMode(InventoryModeEntity.MODE_EPC_TID_M775AUTHENTICATION)
+                    .build()
+            );
         }
 
         mContext.showToast(result ? R.string.setting_succ : R.string.setting_fail);
@@ -828,7 +1046,6 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
                 if (showToast) mContext.showToast(R.string.get_fail);
                 return;
             }
-            Log.d("TAG", "getFastInventory: " + entity.getCr());
             if (entity.getCr() < spFastInventory.getCount()) {
                 spFastInventory.setSelection(entity.getCr());
                 if (showToast) mContext.showToast(R.string.get_succ);
@@ -847,18 +1064,44 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
 
     @OnClick(R.id.btnFactoryReset)
     public void btnFactoryResetClick(View view) {
-        if (mContext.mReader.factoryReset()) {
-            mContext.showToast(R.string.reset_succ);
-            new Thread(() -> {
-                getFre(false);
-                getLinkParams(false);
-                getPower(false);
-                getMomoryBank(false);
-                getSession();
-                getFastInventory(false);
-            }).start();
-        } else {
-            mContext.showToast(R.string.reset_fail);
-        }
+        new AlertDialog.Builder(mContext)
+            .setTitle("⚠️ تأكيد إعادة الضبط")
+            .setMessage("سيتم:\n• إعادة ضبط إعدادات القارئ\n• مسح إعدادات MIRA المحلية\n• استعادة الإعدادات الافتراضية\n\nهل أنت متأكد؟")
+            .setPositiveButton("نعم، إعادة الضبط", (dialog, which) -> {
+                // إعادة ضبط القارئ
+                boolean rfidReset = mContext.mReader.factoryReset();
+                
+                // مسح إعدادات MIRA المحلية
+                SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
+                prefs.edit().clear().apply();
+                
+                if (rfidReset) {
+                    mContext.showToast("✅ تمت إعادة الضبط بنجاح");
+                    
+                    // إعادة تحميل إعدادات RFID
+                    new Thread(() -> {
+                        getFre(false);
+                        getLinkParams(false);
+                        getPower(false);
+                        getMomoryBank(false);
+                        getSession();
+                        getFastInventory(false);
+                    }).start();
+                    
+                    // إعادة تعيين واجهة MIRA
+                    etMiraApiKey.setText("mira_gate_test071234567890abcdefghijklmnop");
+                    etMiraGateId.setText("handheld_c72");
+                    cbSoundOnScan.setChecked(true);
+                    cbShowMiraCard.setChecked(true);
+                    cbRadarSimulation.setChecked(true);
+                    cbAutoQueryMira.setChecked(true);
+                    if (spWorkingMode != null) spWorkingMode.setSelection(0);
+                    
+                } else {
+                    mContext.showToast("❌ فشلت إعادة ضبط القارئ");
+                }
+            })
+            .setNegativeButton("إلغاء", null)
+            .show();
     }
 }
