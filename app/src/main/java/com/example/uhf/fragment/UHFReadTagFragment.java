@@ -165,21 +165,21 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         // 🟢 تهيئة وتفعيل محاكي MIRA Bridge
         bridgeReader = new MockUHFReaderImpl();
         bridgeReader.connect();
-        bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
-            @Override
-            public void onTagRead(String epc, String tid, String rssi) {
-                UHFTAGInfo info = new UHFTAGInfo();
-                info.setEpc(epc);
-                info.setTid(tid);
-                info.setRssi(rssi);
+        // ✅ الكود المصحح مع الدعم الصحيح لـ SDK الخاص بأجهزة UHF:
+bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
+    @Override
+    public void onTagRead(String epc, String tid, String rssi) {
+        UHFTAGInfo info = new UHFTAGInfo();
+        info.setEPC(epc); // 🟢 استخدام الأحرف الكبيرة EPC
+        info.setTid(tid);
+        info.setRssi(rssi);
 
-                Message msg = handler.obtainMessage();
-                msg.obj = info;
-                msg.what = 1;
-                handler.sendMessage(msg);
-            }
-        });
-
+        Message msg = handler.obtainMessage();
+        msg.obj = info;
+        msg.what = 1;
+        handler.sendMessage(msg);
+    }
+});
         if (btnCheckGtin != null) {
             btnCheckGtin.setOnClickListener(new View.OnClickListener() {
                 @Override
