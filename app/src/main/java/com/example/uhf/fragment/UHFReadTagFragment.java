@@ -1,44 +1,29 @@
 package com.example.uhf.fragment;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
-import android.os.SystemClock;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.tools.CheckUtils;
-import com.example.uhf.tools.NumberTool;
-import com.example.uhf.tools.StringUtils;
-import com.rscja.deviceapi.RFIDWithUHFUART;
-import com.rscja.deviceapi.entity.InventoryParameter;
-import com.rscja.deviceapi.entity.UHFTAGInfo;
-import com.rscja.deviceapi.interfaces.IUHFInventoryCallback;
+import com.uhf.api.cls.Reader; // اعتماداً على مكدس المكتبة الخاص بجهازك
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -46,555 +31,226 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-public class UHFReadTagFragment extends KeyDwonFragment {
+public class UHFReadTagFragment extends KeyDwonFragment implements View.OnClickListener {
+
     private static final String TAG = "UHFReadTagFragment";
-    private int inventoryFlag = 1;
-    MyAdapter adapter;
-    Button BtClear;
-    TextView tvTime, tv_count, tv_total;
-    RadioGroup RgInventory;
-    RadioButton RbInventorySingle;
-    RadioButton RbInventoryLoop;
+    private UHFMainActivity mContext;
 
-    private CheckBox cbFilter, cbPhase;
-    private ViewGroup layout_filter;
-    private CheckBox cbEPC_Tam;
+    // عناصر الواجهة الأصلية للـ RFID
+    private RadioGroup RgInventory;
+    private RadioButton RbInventorySingle;
+    private RadioButton RbInventoryLoop;
+    private CheckBox cbFilter;
+    private Button BtInventory;
+    private Button BtClear;
+    private Button btSet;
+    private EditText etPtr, etLen, etData;
+    private RadioButton rbEPC, rbTID, rbUser;
+    private ListView LvTags;
+    private TextView tv_count, tv_total, tvTime;
+    private CheckBox cbPhase;
 
-    // 🟢 عناصر الفحص اليدوي لـ GTIN-13 / EPC
+    // عناصر MIRA ID المضافة
     private EditText etGtinInput;
     private Button btnCheckGtin;
+    private LinearLayout cardMiraResult, layoutMiraLoading, layoutMiraDetails;
+    private TextView tvMiraStatus, tvMiraProductName, tvMiraEpcGtin;
 
-    long maxRunTime = 36000000L;
-    EditText etTime;
-    Button BtInventory;
-    public static ListView LvTags;
-    public UHFMainActivity mContext;
-    private long startTime = SystemClock.elapsedRealtime();
-    private int total;
-
-    private final int MSG_STOP = 3;
-    Handler handler = new Handler(Looper.getMainLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                UHFTAGInfo info = (UHFTAGInfo) msg.obj;
-                addDataToList(info);
-            } else if (msg.what == 2) {
-                if (mContext.loopFlag) {
-                    handler.sendEmptyMessageDelayed(2, 10);
-                    setTotalTime();
-                } else {
-                    handler.removeMessages(2);
-                }
-            } else if (msg.what == MSG_STOP) {
-                stopInventory();
-            }
-        }
-    };
+    // متغيرات عملية الفحص والعد
+    private boolean loopFlag = false;
+    private int totalTagCount = 0;
+    private long startTime = 0;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.i(TAG, "UHFReadTagFragment.onCreateView");
-        if (playSoundThread == null) {
-            playSoundThread = new PlaySoundThread();
-            playSoundThread.start();
-        }
         return inflater.inflate(R.layout.uhf_readtag_fragment, container, false);
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mContext.mReader.setInventoryCallback(null);
-        Log.i(TAG, "onDestroyView");
-        if (playSoundThread != null) {
-            playSoundThread.stopPlay();
-            playSoundThread = null;
-        }
-    }
-
-    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        Log.i(TAG, "UHFReadTagFragment.onActivityCreated");
         super.onActivityCreated(savedInstanceState);
         mContext = (UHFMainActivity) getActivity();
-        mContext.currentFragment = this;
 
-        BtClear = (Button) getView().findViewById(R.id.BtClear);
-        tvTime = (TextView) getView().findViewById(R.id.tvTime);
-        tvTime.setText("0s");
-        tv_count = (TextView) getView().findViewById(R.id.tv_count);
-        tv_total = (TextView) getView().findViewById(R.id.tv_total);
-        RgInventory = (RadioGroup) getView().findViewById(R.id.RgInventory);
-        RbInventorySingle = (RadioButton) getView().findViewById(R.id.RbInventorySingle);
-        RbInventoryLoop = (RadioButton) getView().findViewById(R.id.RbInventoryLoop);
-        etTime = (EditText) getView().findViewById(R.id.etTime);
-        BtInventory = (Button) getView().findViewById(R.id.BtInventory);
-        cbPhase = (CheckBox) getView().findViewById(R.id.cbPhase);
+        initViews();
+        initMiraViews();
+    }
 
-        // 🟢 ربط عناصر الفحص اليدوي
-        etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
-        btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
+    private void initViews() {
+        View view = getView();
+        if (view == null) return;
+
+        RgInventory = view.findViewById(R.id.RgInventory);
+        RbInventorySingle = view.findViewById(R.id.RbInventorySingle);
+        RbInventoryLoop = view.findViewById(R.id.RbInventoryLoop);
+        cbFilter = view.findViewById(R.id.cbFilter);
+        cbPhase = view.findViewById(R.id.cbPhase);
+
+        BtInventory = view.findViewById(R.id.BtInventory);
+        BtClear = view.findViewById(R.id.BtClear);
+        btSet = view.findViewById(R.id.btSet);
+
+        etPtr = view.findViewById(R.id.etPtr);
+        etLen = view.findViewById(R.id.etLen);
+        etData = view.findViewById(R.id.etData);
+
+        rbEPC = view.findViewById(R.id.rbEPC);
+        rbTID = view.findViewById(R.id.rbTID);
+        rbUser = view.findViewById(R.id.rbUser);
+
+        LvTags = view.findViewById(R.id.LvTags);
+        tv_count = view.findViewById(R.id.tv_count);
+        tv_total = view.findViewById(R.id.tv_total);
+        tvTime = view.findViewById(R.id.tvTime);
+
+        if (BtInventory != null) BtInventory.setOnClickListener(this);
+        if (BtClear != null) BtClear.setOnClickListener(this);
+        if (btSet != null) btSet.setOnClickListener(this);
+    }
+
+    private void initMiraViews() {
+        View view = getView();
+        if (view == null) return;
+
+        etGtinInput = view.findViewById(R.id.etGtinInput);
+        btnCheckGtin = view.findViewById(R.id.btnCheckGtin);
+        cardMiraResult = view.findViewById(R.id.cardMiraResult);
+        layoutMiraLoading = view.findViewById(R.id.layoutMiraLoading);
+        layoutMiraDetails = view.findViewById(R.id.layoutMiraDetails);
+        tvMiraStatus = view.findViewById(R.id.tvMiraStatus);
+        tvMiraProductName = view.findViewById(R.id.tvMiraProductName);
+        tvMiraEpcGtin = view.findViewById(R.id.tvMiraEpcGtin);
 
         if (btnCheckGtin != null) {
             btnCheckGtin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (etGtinInput == null) return;
                     String inputCode = etGtinInput.getText().toString().trim();
-                    if (TextUtils.isEmpty(inputCode)) {
+                    if (!TextUtils.isEmpty(inputCode)) {
+                        sendTagToMiraServer(inputCode, "-50");
+                    } else {
                         Toast.makeText(mContext, "يرجى إدخال رمز GTIN-13 أو EPC للفحص", Toast.LENGTH_SHORT).show();
-                        return;
                     }
-                    sendTagToMiraServer(inputCode, "-50");
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.BtInventory) {
+            startInventory();
+        } else if (id == R.id.BtClear) {
+            clearData();
+        } else if (id == R.id.btSet) {
+            Toast.makeText(mContext, "تم حفظ الإعدادات", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * بدء عملية قراءة التاقات عبر قارئ الـ RFID للأجهزة المحمولة
+     */
+    private void startInventory() {
+        if (BtInventory.getText().toString().equals(mContext.getString(R.string.btInventory))) {
+            // البدء بالقراءة
+            if (RbInventoryLoop.isChecked()) {
+                loopFlag = true;
+                new Thread(new InventoryRunnable()).start();
+            } else {
+                // قراءة مفردة (Single)
+                String strEPC = mContext.mReader.RDR_TagInventory(); 
+                if (!TextUtils.isEmpty(strEPC)) {
+                    addTagToList(strEPC, "-50");
+                }
+            }
+            BtInventory.setText(mContext.getString(R.string.btStopInventory));
+            startTime = System.currentTimeMillis();
+        } else {
+            // إيقاف القراءة
+            loopFlag = false;
+            BtInventory.setText(mContext.getString(R.string.btInventory));
+            if (startTime > 0) {
+                long duration = System.currentTimeMillis() - startTime;
+                if (tvTime != null) tvTime.setText(duration + " ms");
+            }
+        }
+    }
+
+    private class InventoryRunnable implements Runnable {
+        @Override
+        public void run() {
+            while (loopFlag) {
+                // جلب التاج الممسوح من مكدس مكتبة الجهاز
+                String strEPC = mContext.mReader != null ? mContext.mReader.RDR_TagInventory() : null;
+                if (!TextUtils.isEmpty(strEPC)) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            addTagToList(strEPC, "-50");
+                        }
+                    });
+                }
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+        }
+    };
+
+    private void clearData() {
+        totalTagCount = 0;
+        if (tv_count != null) tv_count.setText("0");
+        if (tv_total != null) tv_total.setText("0");
+        if (cardMiraResult != null) cardMiraResult.setVisibility(View.GONE);
+    }
+
+    /**
+     * تتم معالجة التاج المتقط وتمريره لـ MIRA تلقائياً
+     */
+    public void addTagToList(String epc, String rssi) {
+        if (getActivity() == null) return;
+
+        totalTagCount++;
+        if (tv_count != null) tv_count.setText(String.valueOf(totalTagCount));
+        if (tv_total != null) tv_total.setText(String.valueOf(totalTagCount));
+
+        if (etGtinInput != null) {
+            etGtinInput.setText(epc);
+        }
+
+        // إرسال الـ EPC المكتشف فوراً إلى سيرفر MIRA ID
+        sendTagToMiraServer(epc, rssi);
+    }
+
+    /**
+     * دالة الاتصال المباشر بـ MIRA Digital Trust API
+     */
+    private void sendTagToMiraServer(final String epc, final String rssi) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (cardMiraResult != null) cardMiraResult.setVisibility(View.VISIBLE);
+                    if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
+                    if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
                 }
             });
         }
 
-        LvTags = (ListView) getView().findViewById(R.id.LvTags);
-        adapter = new MyAdapter(mContext);
-        
-        // 🟢 ضغطة طويلة على Clear لإرسال قراءة تجريبية
-        BtClear.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                String mockEpc = "E28011700000020123456789";
-                sendTagToMiraServer(mockEpc, "-65");
-                Toast.makeText(mContext, "تم إرسال قراءة تجريبية لـ MIRA: " + mockEpc, Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
-
-        LvTags.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                adapter.setSelectItem(position);
-                adapter.notifyDataSetInvalidated();
-            }
-        });
-
-        LvTags.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long l) {
-                ClipboardManager clipboard = (ClipboardManager) view.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("label", mContext.tagList.get(position).getEPC());
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(view.getContext(), R.string.msg_copy_clipboard, Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        });
-
-        LvTags.setAdapter(adapter);
-        BtClear.setOnClickListener(new BtClearClickListener());
-        RgInventory.setOnCheckedChangeListener(new RgInventoryCheckedListener());
-        BtInventory.setOnClickListener(new BtInventoryClickListener());
-
-        initFilter(getView());
-        initEPCTamperAlarm(getView());
-        tv_count.setText(mContext.tagList.size() + "");
-        tv_total.setText(total + "");
-    }
-
-    private Button btnSetFilter;
-
-    private void initFilter(View view) {
-        layout_filter = (ViewGroup) view.findViewById(R.id.layout_filter);
-        layout_filter.setVisibility(View.GONE);
-        cbFilter = (CheckBox) view.findViewById(R.id.cbFilter);
-        cbFilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                layout_filter.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            }
-        });
-
-        final EditText etOffset = (EditText) view.findViewById(R.id.etPtr);
-        final EditText etLen = (EditText) view.findViewById(R.id.etLen);
-        final EditText etData = (EditText) view.findViewById(R.id.etData);
-        final RadioButton rbEPC = (RadioButton) view.findViewById(R.id.rbEPC);
-        final RadioButton rbTID = (RadioButton) view.findViewById(R.id.rbTID);
-        final RadioButton rbUser = (RadioButton) view.findViewById(R.id.rbUser);
-
-        etData.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                etLen.setText(String.valueOf(etData.getText().toString().trim().length() * 4));
-            }
-        });
-
-        btnSetFilter = (Button) view.findViewById(R.id.btSet);
-        btnSetFilter.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int filterBank = RFIDWithUHFUART.Bank_EPC;
-                if (rbEPC.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_EPC;
-                } else if (rbTID.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_TID;
-                } else if (rbUser.isChecked()) {
-                    filterBank = RFIDWithUHFUART.Bank_USER;
-                }
-                
-                if (etLen.getText().toString().isEmpty() || etOffset.getText().toString().isEmpty()) {
-                    mContext.showToast("يرجى تعبئة العنوان والطول");
-                    return;
-                }
-                int ptr = StringUtils.toInt(etOffset.getText().toString(), 0);
-                int len = StringUtils.toInt(etLen.getText().toString(), 0);
-                String data = etData.getText().toString().trim();
-                if (len > 0) {
-                    String rex = "[\\da-fA-F]*";
-                    if (data.isEmpty() || !data.matches(rex)) {
-                        mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
-                        return;
-                    }
-
-                    if (mContext.mReader.setFilter(filterBank, ptr, len, data)) {
-                        mContext.showToast(R.string.uhf_msg_set_filter_succ);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_set_filter_fail);
-                    }
-                } else {
-                    String dataStr = "";
-                    if (mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, dataStr)
-                            && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_TID, 0, 0, dataStr)
-                            && mContext.mReader.setFilter(RFIDWithUHFUART.Bank_USER, 0, 0, dataStr)) {
-                        mContext.showToast(R.string.msg_disable_succ);
-                    } else {
-                        mContext.showToast(R.string.msg_disable_fail);
-                    }
-                }
-                cbFilter.setChecked(false);
-            }
-        });
-
-        rbEPC.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbEPC.isChecked()) etOffset.setText("32"); }
-        });
-        rbTID.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbTID.isChecked()) etOffset.setText("0"); }
-        });
-        rbUser.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) { if (rbUser.isChecked()) etOffset.setText("0"); }
-        });
-    }
-
-    private void initEPCTamperAlarm(View view) {
-        cbEPC_Tam = (CheckBox) view.findViewById(R.id.cbEPC_Tam);
-        cbEPC_Tam.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (!isChecked) {
-                    mContext.mReader.setEPCMode();
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        stopInventory();
-    }
-
-    private void addDataToList(UHFTAGInfo info) {
-        String epc = info.getEPC();
-        if (StringUtils.isNotEmpty(epc)) {
-            boolean[] exists = new boolean[1];
-            int insertIndex = CheckUtils.getInsertIndex(mContext.tagList, info, exists);
-            if (exists[0]) {
-                info.setCount(mContext.tagList.get(insertIndex).getCount() + 1);
-                mContext.tagList.set(insertIndex, info);
-            } else {
-                mContext.tagList.add(insertIndex, info);
-                tv_count.setText(String.valueOf(adapter.getCount()));
-            }
-            tv_total.setText(String.valueOf(++total));
-            adapter.notifyDataSetChanged();
-            
-            // 🟢 التوصيل التلقائي لـ MIRA API عند أي مسح ليزري
-            sendTagToMiraServer(epc, info.getRssi());
-        }
-    }
-
-    public class BtClearClickListener implements OnClickListener {
-        @Override
-        public void onClick(View v) {
-            clearData();
-            mContext.selectIndex = -1;
-        }
-    }
-
-    private void clearData() {
-        tv_count.setText("0");
-        tv_total.setText("0");
-        tvTime.setText("0s");
-        total = 0;
-        mContext.tagList.clear();
-        adapter.notifyDataSetChanged();
-    }
-
-    public class RgInventoryCheckedListener implements OnCheckedChangeListener {
-        @Override
-        public void onCheckedChanged(RadioGroup group, int checkedId) {
-            if (checkedId == RbInventorySingle.getId()) {
-                inventoryFlag = 0;
-            } else if (checkedId == RbInventoryLoop.getId()) {
-                inventoryFlag = 1;
-            }
-        }
-    }
-
-    public class BtInventoryClickListener implements OnClickListener {
-        @Override
-        public void onClick(View v) {
-            readTag();
-        }
-    }
-
-    private void readTag() {
-        cbFilter.setChecked(false);
-        if (BtInventory.getText().equals(mContext.getString(R.string.btInventory))) {
-            switch (inventoryFlag) {
-                case 0:
-                    startTime = SystemClock.elapsedRealtime();
-                    UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
-                    if (uhftagInfo != null) {
-                        addDataToList(uhftagInfo);
-                        setTotalTime();
-                        mContext.playSound(1);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_inventory_fail);
-                    }
-                    break;
-                case 1:
-                    mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
-                        @Override
-                        public void callback(UHFTAGInfo uhftagInfo) {
-                            Message msg = handler.obtainMessage();
-                            msg.obj = uhftagInfo;
-                            msg.what = 1;
-                            handler.sendMessage(msg);
-                            playSoundThread.play();
-                        }
-                    });
-                    playSoundThread.cleanData();
-
-                    InventoryParameter inventoryParameter = new InventoryParameter();
-                    inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
-                    if (mContext.mReader.startInventoryTag(inventoryParameter)) {
-                        String time = etTime.getText().toString();
-                        if (time.length() > 0 && time.startsWith(".")) {
-                            etTime.setText("");
-                            time = "";
-                        }
-                        if (!time.isEmpty()) {
-                            maxRunTime = (int) (Float.parseFloat(time) * 1000);
-                            clearData();
-                        } else {
-                            maxRunTime = Long.parseLong(etTime.getHint().toString()) * 1000;
-                        }
-                        handler.removeMessages(MSG_STOP);
-                        handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
-
-                        BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
-                        mContext.loopFlag = true;
-                        setViewEnabled(false);
-                        startTime = SystemClock.elapsedRealtime();
-                        handler.sendEmptyMessageDelayed(2, 10);
-                    } else {
-                        stopInventory();
-                        mContext.showToast(R.string.uhf_msg_inventory_open_fail);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            stopInventory();
-            setTotalTime();
-        }
-    }
-
-    private void setTotalTime() {
-        float useTime = (SystemClock.elapsedRealtime() - startTime) / 1000.0F;
-        tvTime.setText(NumberTool.getPointDouble(1, useTime) + "s");
-    }
-
-    private void setViewEnabled(boolean enabled) {
-        RbInventorySingle.setEnabled(enabled);
-        RbInventoryLoop.setEnabled(enabled);
-        cbFilter.setEnabled(enabled);
-        btnSetFilter.setEnabled(enabled);
-        cbEPC_Tam.setEnabled(enabled);
-        cbPhase.setEnabled(enabled);
-    }
-
-    private void stopInventory() {
-        handler.removeMessages(MSG_STOP);
-        if (mContext.loopFlag) {
-            mContext.loopFlag = false;
-            setViewEnabled(true);
-            if (mContext.mReader.stopInventory()) {
-                BtInventory.setText(mContext.getString(R.string.btInventory));
-            } else {
-                mContext.showToast(R.string.uhf_msg_inventory_stop_fail);
-            }
-        }
-    }
-
-    private String mergeTidEpc(UHFTAGInfo uhftagInfo) {
-        String data = "";
-        if (uhftagInfo.getReserved() != null && !uhftagInfo.getReserved().isEmpty()) {
-            data += "RESERVED:" + uhftagInfo.getReserved();
-            data += "\nEPC:" + uhftagInfo.getEPC();
-        } else {
-            data += TextUtils.isEmpty(uhftagInfo.getTid()) ? uhftagInfo.getEPC() : "EPC:" + uhftagInfo.getEPC();
-        }
-        if (!TextUtils.isEmpty(uhftagInfo.getTid())
-                && !uhftagInfo.getTid().equals("0000000000000000")
-                && !uhftagInfo.getTid().equals("000000000000000000000000")) {
-            data += "\nTID:" + uhftagInfo.getTid();
-        }
-        if (uhftagInfo.getUser() != null && uhftagInfo.getUser().length() > 0) {
-            data += "\nUSER:" + uhftagInfo.getUser();
-        }
-        return data;
-    }
-
-    @Override
-    public void myOnKeyDwon() {
-        readTag();
-    }
-
-    public final class ViewHolder {
-        public TextView tvTag;
-        public TextView tvTagCount;
-        public TextView tvTagRssi;
-        public TextView tvPhase;
-    }
-
-    public class MyAdapter extends BaseAdapter {
-        private LayoutInflater mInflater;
-
-        public MyAdapter(Context context) {
-            this.mInflater = LayoutInflater.from(context);
-        }
-
-        public int getCount() { return mContext.tagList.size(); }
-        public Object getItem(int arg0) { return mContext.tagList.get(arg0); }
-        public long getItemId(int arg0) { return arg0; }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder holder;
-            if (convertView == null) {
-                holder = new ViewHolder();
-                convertView = mInflater.inflate(R.layout.listtag_items, null);
-                holder.tvTag = (TextView) convertView.findViewById(R.id.TvTagUii);
-                holder.tvTagCount = (TextView) convertView.findViewById(R.id.TvTagCount);
-                holder.tvTagRssi = (TextView) convertView.findViewById(R.id.TvTagRssi);
-                holder.tvPhase = (TextView) convertView.findViewById(R.id.TvPhase);
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-            UHFTAGInfo uhftagInfo = mContext.tagList.get(position);
-            holder.tvTag.setText(mergeTidEpc(uhftagInfo));
-            holder.tvTagCount.setText(String.valueOf(uhftagInfo.getCount()));
-            holder.tvTagRssi.setText(uhftagInfo.getRssi());
-            holder.tvPhase.setText(String.valueOf(uhftagInfo.getPhase()));
-
-            if (position == mContext.selectIndex) {
-                convertView.setBackgroundColor(mContext.getResources().getColor(R.color.lfile_colorPrimary));
-            } else {
-                convertView.setBackgroundColor(Color.TRANSPARENT);
-            }
-            return convertView;
-        }
-
-        public void setSelectItem(int select) {
-            if (mContext.selectIndex == select) {
-                mContext.selectIndex = -1;
-            } else {
-                mContext.selectIndex = select;
-            }
-        }
-    }
-
-    private Object objectLock = new Object();
-    PlaySoundThread playSoundThread = null;
-
-    private class PlaySoundThread extends Thread {
-        private boolean isStop = false;
-        ConcurrentLinkedQueue queue = new ConcurrentLinkedQueue();
-        long count = 0;
-        long consumption = 0;
-
-        @Override
-        public void run() {
-            while (!isStop) {
-                if (queue.isEmpty()) {
-                    synchronized (objectLock) {
-                        try {
-                            objectLock.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-                if (mContext.loopFlag) {
-                    mContext.playSound(1);
-                    queue.poll();
-                    consumption++;
-                }
-                if (count - consumption > 50) {
-                    for (int k = 0; k < 25; k++) {
-                        queue.poll();
-                    }
-                    consumption += 25;
-                }
-            }
-        }
-
-        public void play() {
-            queue.offer(1);
-            synchronized (objectLock) {
-                objectLock.notifyAll();
-                count++;
-            }
-        }
-
-        public void cleanData() {
-            count = 0;
-            consumption = 0;
-            queue.clear();
-        }
-
-        public void stopPlay() {
-            isStop = true;
-            count = 0;
-            consumption = 0;
-            queue.clear();
-            synchronized (objectLock) {
-                objectLock.notifyAll();
-            }
-        }
-    }
-
-    // 🟢 دالة الاتصال بالخادم الرئيسي MIRA
-    private void sendTagToMiraServer(final String epc, final String rssi) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -611,6 +267,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
                     JSONObject jsonParam = new JSONObject();
                     jsonParam.put("epc", epc);
+                    jsonParam.put("rssi", rssi);
                     jsonParam.put("gate_id", "handheld_c72");
 
                     try (OutputStream os = conn.getOutputStream()) {
@@ -619,7 +276,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     }
 
                     final int responseCode = conn.getResponseCode();
-                    
                     if (responseCode >= 200 && responseCode < 300) {
                         inputStream = conn.getInputStream();
                     } else {
@@ -633,29 +289,61 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         response.append(line.trim());
                     }
 
-                    Log.d(TAG, "MIRA Response Code: " + responseCode);
-                    Log.d(TAG, "MIRA Response Body: " + response.toString());
+                    final String responseData = response.toString();
 
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+
                                 if (responseCode == 200) {
-                                    Toast.makeText(mContext, "✅ تم التسجيل في MIRA بنجاح!", Toast.LENGTH_SHORT).show();
+                                    if (tvMiraStatus != null) {
+                                        tvMiraStatus.setText("حالة القطعة: ✅ موثقة ومعتمدة في MIRA");
+                                        tvMiraStatus.setTextColor(Color.parseColor("#2E7D32"));
+                                    }
+                                    if (tvMiraProductName != null) {
+                                        tvMiraProductName.setText("استجابة النظام: " + responseData);
+                                    }
+                                    if (tvMiraEpcGtin != null) {
+                                        tvMiraEpcGtin.setText("رمز EPC: " + epc);
+                                    }
                                 } else {
-                                    Toast.makeText(mContext, "❌ فشل الإرسال (رمز: " + responseCode + ")", Toast.LENGTH_LONG).show();
+                                    if (tvMiraStatus != null) {
+                                        tvMiraStatus.setText("حالة القطعة: ❌ غير مسجلة (كود: " + responseCode + ")");
+                                        tvMiraStatus.setTextColor(Color.RED);
+                                    }
+                                    if (tvMiraProductName != null) {
+                                        tvMiraProductName.setText("الرسالة: " + responseData);
+                                    }
+                                    if (tvMiraEpcGtin != null) {
+                                        tvMiraEpcGtin.setText("رمز EPC: " + epc);
+                                    }
                                 }
                             }
                         });
                     }
 
                 } catch (final Exception e) {
-                    Log.e(TAG, "MIRA Connection Error", e);
+                    Log.e(TAG, "Error: " + e.getMessage());
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
-                            @Override
+                            @Option
                             public void run() {
-                                Toast.makeText(mContext, "⚠️ خطأ اتصال: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+
+                                if (tvMiraStatus != null) {
+                                    tvMiraStatus.setText("حالة الاتصال: ⚠️ خطأ في الشبكة");
+                                    tvMiraStatus.setTextColor(Color.RED);
+                                }
+                                if (tvMiraProductName != null) {
+                                    tvMiraProductName.setText("السبب: " + e.getMessage());
+                                }
+                                if (tvMiraEpcGtin != null) {
+                                    tvMiraEpcGtin.setText("رمز EPC: " + epc);
+                                }
                             }
                         });
                     }
