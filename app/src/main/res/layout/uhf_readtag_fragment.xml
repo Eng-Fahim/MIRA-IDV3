@@ -261,39 +261,37 @@
             android:textSize="15sp" />
     </LinearLayout>
 
-    <!--
+    <!-- 🟢 قسم الفحص المباشر (GTIN-13 Lookup) الجديد -->
     <LinearLayout
-        android:id="@+id/layout0"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="5dp" >
+        android:orientation="horizontal"
+        android:paddingHorizontal="6dp"
+        android:paddingBottom="5dp"
+        android:gravity="center_vertical"
+        android:background="#F8F9FA">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tvCountOfTags"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/tv_count"
+        <EditText
+            android:id="@+id/etGtinInput"
             android:layout_width="0dp"
+            android:layout_height="40dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:hint="أدخل رقم GTIN-13 أو EPC"
+            android:inputType="text"
+            android:paddingHorizontal="8dp"
+            android:textSize="13sp"
+            android:background="@android:drawable/editbox_background"/>
 
         <Button
-            android:id="@+id/BtClear"
+            android:id="@+id/btnCheckGtin"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/btClear"
-            android:textColor="@color/white"
-            android:textSize="15sp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
             android:background="@drawable/button_bg"
-            android:layout_marginRight="5dp" />
+            android:text="فحص القطعة"
+            android:textColor="@color/white"
+            android:textSize="13sp"/>
     </LinearLayout>
-    -->
 
     <LinearLayout
         android:id="@+id/llContinuous"
