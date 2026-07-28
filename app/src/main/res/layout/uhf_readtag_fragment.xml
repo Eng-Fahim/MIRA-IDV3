@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:background="#F8FAFC">
 
-    <!-- ========== الشريط العلوي لتحديد وضع القراءة والفلترة ========== -->
+    <!-- ========== الشريط العلوي لتحديد نمط القراءة والفلترة ========== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -228,7 +228,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- قسم الاستعلام والبحث اليدوي -->
+            <!-- قسم البحث اليدوي -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -260,139 +260,136 @@
                     android:paddingHorizontal="16dp" />
             </LinearLayout>
 
-            <!-- 🟢 بطاقة ملخص الجرد التجميعي (Batch Summary Panel) -->
-            <LinearLayout
-                android:id="@+id/cardBatchSummary"
+            <!-- 📊 جدول الجرد التجميعي الموحد (Unified Batch Summary Table) -->
+            <TableLayout
+                android:id="@+id/tableBatchSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:background="#FFFFFF"
                 android:elevation="3dp"
-                android:padding="12dp"
+                android:padding="8dp"
+                android:stretchColumns="*"
                 android:layout_marginBottom="8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📊 ملخص الجرد التجميعي (MIRA Batch Audit)"
-                    android:textColor="#1E293B"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp"/>
+                <!-- رأس الجدول -->
+                <TableRow
+                    android:background="#1A237E"
+                    android:padding="8dp">
+                    <TextView
+                        android:text="حالة MIRA"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:text="القطع المقروءة"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:text="النسبة"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+                </TableRow>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                <!-- صف الإجمالي -->
+                <TableRow
+                    android:background="#F1F5F9"
+                    android:padding="8dp">
+                    <TextView
+                        android:text="📦 إجمالي القطع"
+                        android:textColor="#0F172A"
+                        android:textStyle="bold"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvBatchTotal"
+                        android:text="0"
+                        android:textColor="#0F172A"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:text="100%"
+                        android:textColor="#0F172A"
+                        android:textSize="11sp"
+                        android:gravity="center" />
+                </TableRow>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="#F1F5F9"
-                        android:padding="8dp"
-                        android:layout_marginEnd="4dp">
+                <!-- صف المصرح -->
+                <TableRow
+                    android:background="#DCFCE7"
+                    android:padding="8dp">
+                    <TextView
+                        android:text="✅ مصرح (Authorized)"
+                        android:textColor="#166534"
+                        android:textStyle="bold"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvBatchAllowed"
+                        android:text="0"
+                        android:textColor="#166534"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/tvBatchAllowedPct"
+                        android:text="0%"
+                        android:textColor="#15803D"
+                        android:textSize="11sp"
+                        android:gravity="center" />
+                </TableRow>
 
-                        <TextView
-                            android:id="@+id/tvBatchTotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#0F172A"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
+                <!-- صف الممنوع -->
+                <TableRow
+                    android:background="#FEE2E2"
+                    android:padding="8dp">
+                    <TextView
+                        android:text="🚨 ممنوع (Blocked)"
+                        android:textColor="#991B1B"
+                        android:textStyle="bold"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvBatchBlocked"
+                        android:text="0"
+                        android:textColor="#991B1B"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/tvBatchBlockedPct"
+                        android:text="0%"
+                        android:textColor="#B91C1C"
+                        android:textSize="11sp"
+                        android:gravity="center" />
+                </TableRow>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="إجمالي المقروء"
-                            android:textColor="#64748B"
-                            android:textSize="10sp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="#DCFCE7"
-                        android:padding="8dp"
-                        android:layout_marginEnd="4dp">
-
-                        <TextView
-                            android:id="@+id/tvBatchAllowed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#166534"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="مصرح ✅"
-                            android:textColor="#15803D"
-                            android:textSize="10sp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="#FEE2E2"
-                        android:padding="8dp"
-                        android:layout_marginEnd="4dp">
-
-                        <TextView
-                            android:id="@+id/tvBatchBlocked"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#991B1B"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="ممنوع 🚨"
-                            android:textColor="#B91C1C"
-                            android:textSize="10sp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="#FEF3C7"
-                        android:padding="8dp">
-
-                        <TextView
-                            android:id="@+id/tvBatchUnknown"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#92400E"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="مجهول ⚠️"
-                            android:textColor="#B45309"
-                            android:textSize="10sp"/>
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
+                <!-- صف المجهول -->
+                <TableRow
+                    android:background="#FEF3C7"
+                    android:padding="8dp">
+                    <TextView
+                        android:text="⚠️ مجهول (Unknown)"
+                        android:textColor="#92400E"
+                        android:textStyle="bold"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvBatchUnknown"
+                        android:text="0"
+                        android:textColor="#92400E"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/tvBatchUnknownPct"
+                        android:text="0%"
+                        android:textColor="#B45309"
+                        android:textSize="11sp"
+                        android:gravity="center" />
+                </TableRow>
+            </TableLayout>
 
             <!-- 🟢 بطاقة نتيجة MIRA ID الفردية -->
             <LinearLayout
