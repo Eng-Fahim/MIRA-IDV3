@@ -33,7 +33,6 @@ import com.rscja.deviceapi.entity.RadarLocationEntity;
 import com.rscja.deviceapi.interfaces.IUHF;
 import com.rscja.deviceapi.interfaces.IUHFRadarLocationCallback;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -42,7 +41,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class UHFRadarLocationFragment extends KeyDwonFragment {
 
@@ -54,10 +55,12 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     private Button btStart;
     private Button btStop;
     private CircleSeekBar seekBarPower;
-    private boolean isSingleLabel = false;
     private boolean inventoryFlag = false;
     private String targetEpc;
     int progress = 5;
+
+    // 🟢 متغير للتحكم في وضع المحاكاة (true = محاكاة، false = جهاز حقيقي)
+    private static final boolean SIMULATION_MODE = true;
 
     // 🟢 MIRA Radar - عناصر جديدة
     private LinearLayout layoutMiraRadarInfo;
@@ -128,7 +131,9 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         });
     }
 
+    // =============================================
     // 🟢 استعلام MIRA API عن قطعة محددة
+    // =============================================
     private void queryMiraItem(final String epc) {
         new Thread(new Runnable() {
             @Override
@@ -179,12 +184,28 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
 
                 } catch (Exception e) {
                     Log.e(TAG, "MIRA query error: " + e.getMessage());
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (tvRadarItemStatus != null) {
+                                    tvRadarItemStatus.setText("⚠️ خطأ في الاتصال بـ MIRA");
+                                    tvRadarItemStatus.setTextColor(Color.parseColor("#FF9800"));
+                                }
+                                if (layoutMiraRadarInfo != null) {
+                                    layoutMiraRadarInfo.setVisibility(View.VISIBLE);
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }).start();
     }
 
+    // =============================================
     // 🟢 تحديث بطاقة معلومات MIRA Radar
+    // =============================================
     private void updateMiraRadarInfo(String epc, JSONObject decision, JSONObject item) {
         if (layoutMiraRadarInfo != null) {
             layoutMiraRadarInfo.setVisibility(View.VISIBLE);
@@ -241,20 +262,9 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         }
     }
 
-    Toast toast = null;
-
-    private void showMSG(int power) {
-        if (toast == null) {
-            toast = new Toast(mContext);
-        }
-        toast.cancel();
-        toast.setDuration(Toast.LENGTH_SHORT);
-        toast.setText("الطاقة:" + power);
-        toast.show();
-    }
-
-    private Handler handler = new Handler(Looper.getMainLooper());
-
+    // =============================================
+    // 🟢 دالة البدء (موحدة - تدعم المحاكاة والجهاز الحقيقي)
+    // =============================================
     @SuppressLint("LongLogTag")
     private void startLocated() {
         if (inventoryFlag) return;
@@ -262,36 +272,33 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         radarView.clearPanel();
         targetEpc = etEPC.getText().toString();
         
-        // 🟢 إعادة تعيين العدادات
+        // إعادة تعيين العدادات
         authorizedCount = 0;
         deniedCount = 0;
         unknownCount = 0;
         if (tvAuthorizedCount != null) tvAuthorizedCount.setText("0");
         if (tvDeniedCount != null) tvDeniedCount.setText("0");
         if (tvUnknownCount != null) tvUnknownCount.setText("0");
+        
+        // إخفاء البطاقة
+        if (layoutMiraRadarInfo != null) layoutMiraRadarInfo.setVisibility(View.GONE);
 
+        // 🟢 وضع المحاكاة للتطوير
+        if (SIMULATION_MODE) {
+            startSimulatedRadar();
+            return;
+        }
+
+        // الكود الأصلي لجهاز Chainway الحقيقي
         boolean result = mContext.mReader.startRadarLocation(mContext, targetEpc, IUHF.Bank_EPC, 32, new IUHFRadarLocationCallback() {
             @Override
             public void getLocationValue(final List<RadarLocationEntity> list) {
                 radarView.bindingData(list, targetEpc);
-
-                // 🟢 استعلام MIRA عن أول قطعة في القائمة
-                if (!list.isEmpty() && !TextUtils.isEmpty(targetEpc)) {
-                    for (RadarLocationEntity entity : list) {
-                        if (entity.getTag().equals(targetEpc)) {
-                            queryMiraItem(targetEpc);
-                            mContext.playSoundDelayed(entity.getValue());
-                            break;
-                        }
-                    }
-                } else if (!TextUtils.isEmpty(targetEpc)) {
-                    // قطعة محددة غير موجودة في النطاق
-                    queryMiraItem(targetEpc);
-                }
-
+                
                 if (!TextUtils.isEmpty(targetEpc)) {
                     for (int k = 0; k < list.size(); k++) {
                         if (list.get(k).getTag().equals(targetEpc)) {
+                            queryMiraItem(targetEpc);
                             mContext.playSoundDelayed(list.get(k).getValue());
                         }
                     }
@@ -307,7 +314,13 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         });
         
         if (!result) {
-            UIHelper.ToastMessage(mContext, "فشل البدء");
+            // 🟢 فشل الرادار - نجرب استعلام MIRA على الأقل
+            if (!TextUtils.isEmpty(targetEpc)) {
+                queryMiraItem(targetEpc);
+                Toast.makeText(mContext, "⚠️ الرادار غير مدعوم - تم جلب معلومات MIRA فقط", Toast.LENGTH_LONG).show();
+            } else {
+                UIHelper.ToastMessage(mContext, "فشل البدء - أدخل EPC صحيح");
+            }
             return;
         }
 
@@ -316,10 +329,8 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
             public void onProgressChanged(SeekBar seekBar, int progress2, boolean fromUser) {
                 progress = progress2;
             }
-
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {}
-
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 int p = 35 - progress;
@@ -336,25 +347,99 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
         Log.i(TAG, "startLocated success");
     }
 
+    // =============================================
+    // 🟢 محاكي الرادار للتطوير والاختبار
+    // =============================================
+    private Handler simulationHandler = new Handler(Looper.getMainLooper());
+    private Runnable simulationRunnable;
+    private float simulationAngle = 0;
+    private Random random = new Random();
+
+    private void startSimulatedRadar() {
+        final String epcToTrack = targetEpc;
+        
+        // استعلام MIRA مباشرة
+        queryMiraItem(epcToTrack);
+        
+        // بدء محاكاة الرادار
+        radarView.startRadar();
+        seekBarPower.setEnabled(true);
+        inventoryFlag = true;
+        btStart.setEnabled(false);
+        etEPC.setEnabled(false);
+        
+        simulationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!inventoryFlag) return;
+                
+                // تحديث الزاوية
+                simulationAngle += 5;
+                if (simulationAngle >= 360) simulationAngle = 0;
+                
+                // توليد نقاط وهمية
+                List<RadarLocationEntity> simulatedList = new ArrayList<>();
+                
+                // إضافة القطعة المستهدفة
+                RadarLocationEntity targetEntity = new RadarLocationEntity();
+                targetEntity.setTag(epcToTrack);
+                targetEntity.setValue(random.nextInt(100) + 1);
+                targetEntity.setEPC(epcToTrack);
+                simulatedList.add(targetEntity);
+                
+                // إضافة قطع أخرى وهمية
+                for (int i = 0; i < random.nextInt(8) + 2; i++) {
+                    RadarLocationEntity entity = new RadarLocationEntity();
+                    entity.setTag("SIM_" + i);
+                    entity.setValue(random.nextInt(80) + 20);
+                    entity.setEPC("SIM_" + i);
+                    simulatedList.add(entity);
+                }
+                
+                radarView.bindingData(simulatedList, epcToTrack);
+                radarView.setRotation(-simulationAngle);
+                
+                mContext.playSound(1);
+                
+                simulationHandler.postDelayed(this, 1500);
+            }
+        };
+        simulationHandler.post(simulationRunnable);
+        
+        Toast.makeText(mContext, "⚡ وضع المحاكاة", Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "Simulated radar started");
+    }
+
+    // =============================================
+    // 🟢 دالة الإيقاف (موحدة)
+    // =============================================
     @SuppressLint("LongLogTag")
     private void stopLocated() {
         if (!inventoryFlag) return;
-        radarView.stopRadar();
 
-        boolean result = mContext.mReader.stopRadarLocation();
-        if (!result) {
-            Log.e(TAG, "stopLocated failure");
-            mContext.playSound(2);
-            Toast.makeText(mContext, R.string.uhf_msg_inventory_stop_fail, Toast.LENGTH_SHORT).show();
+        // إيقاف المحاكاة إذا كانت مفعلة
+        if (SIMULATION_MODE) {
+            if (simulationRunnable != null) {
+                simulationHandler.removeCallbacks(simulationRunnable);
+            }
         } else {
-            Log.i(TAG, "stopLocated success");
-            inventoryFlag = false;
-            btStart.setEnabled(true);
-            etEPC.setEnabled(true);
+            boolean result = mContext.mReader.stopRadarLocation();
+            if (!result) {
+                Log.e(TAG, "stopLocated failure");
+                mContext.playSound(2);
+                Toast.makeText(mContext, R.string.uhf_msg_inventory_stop_fail, Toast.LENGTH_SHORT).show();
+            }
         }
+        
+        radarView.stopRadar();
+        inventoryFlag = false;
+        btStart.setEnabled(true);
+        etEPC.setEnabled(true);
         seekBarPower.setOnSeekBarChangeListener(null);
         seekBarPower.setProgress(5);
         seekBarPower.setEnabled(false);
+        
+        Log.i(TAG, "stopLocated success");
     }
 
     @Override
@@ -375,7 +460,6 @@ public class UHFRadarLocationFragment extends KeyDwonFragment {
     public void onPause() {
         super.onPause();
         stopLocated();
-        radarView.stopRadar();
     }
 
     @Override
