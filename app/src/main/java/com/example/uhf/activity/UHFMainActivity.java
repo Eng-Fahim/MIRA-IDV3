@@ -1,6 +1,5 @@
 package com.example.uhf.activity;
 
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,6 +14,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTabHost;
 
@@ -41,14 +42,6 @@ import com.rscja.deviceapi.entity.UHFTAGInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- * UHF使用demo
- * 1、在操作设备前需要调用 init()打开设备，使用完后调用 free() 关闭设备
- * 更多函数的使用方法请查看API说明文档
- *
- * @author zhopin
- * 更新于 2020年7月23日
- */
 public class UHFMainActivity extends BaseTabFragmentActivity {
 
     private final static String TAG = "MainActivity";
@@ -56,9 +49,11 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     private FragmentManager fm;
     public int selectIndex = -1;
     public ArrayList<UHFTAGInfo> tagList = new ArrayList<UHFTAGInfo>();
-    ;
     public boolean loopFlag = false;
     private PlaySoundThread playSoundThread = null;
+    
+    // 🟢 الفragment الحالي
+    public Fragment currentFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +64,32 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         initSound();
         initUHF();
         initViewPageData();
+    }
 
+    // ============================================
+    // 🟢 تفويض onActivityResult للـ Fragment الحالي
+    // ============================================
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        // 🟢 تفويض للـ Fragment النشط
+        if (mTabHost != null) {
+            String currentTabTag = mTabHost.getCurrentTabTag();
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag(currentTabTag);
+            
+            if (fragment != null) {
+                fragment.onActivityResult(requestCode, resultCode, data);
+            }
+        }
+        
+        // 🟢 تفويض إضافي للـ currentFragment إذا كان مختلفاً
+        if (currentFragment != null && currentFragment instanceof UHFReadTagFragment) {
+            currentFragment.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     protected void initViewPageData() {
-
         fm = getSupportFragmentManager();
         mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
         mTabHost.setup(this, fm, R.id.realtabcontent);
@@ -134,10 +150,8 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
-
     @Override
     public void exportData() {
-        // super.exportData();
         checkReadWritePermission();
         if (loopFlag) {
             UIHelper.ToastMessage(this, R.string.uhf_msg_scaning);
@@ -159,7 +173,7 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 5);
         soundMap.put(1, soundPool.load(this, R.raw.barcodebeep, 1));
         soundMap.put(2, soundPool.load(this, R.raw.serror, 2));
-        am = (AudioManager) this.getSystemService(AUDIO_SERVICE);// 实例化AudioManager对象
+        am = (AudioManager) this.getSystemService(AUDIO_SERVICE);
 
         playSoundThread = new PlaySoundThread();
         playSoundThread.start();
@@ -172,21 +186,16 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         }
     }
 
-    /**
-     * 播放提示音
-     *
-     * @param id 成功1，失败2
-     */
     public void playSound(int id) {
-        float audioMaxVolume = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); // 返回当前AudioManager对象的最大音量值
-        float audioCurrentVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC);// 返回当前AudioManager对象的音量值
+        float audioMaxVolume = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        float audioCurrentVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC);
         volumnRatio = audioCurrentVolume / audioMaxVolume;
         try {
-            soundPool.play(soundMap.get(id), volumnRatio, // 左声道音量
-                    volumnRatio, // 右声道音量
-                    1, // 优先级，0为最低
-                    0, // 循环次数，0不循环，-1永远循环
-                    1 // 回放速度 ，该值在0.5-2.0之间，1为正常速度
+            soundPool.play(soundMap.get(id), volumnRatio,
+                    volumnRatio,
+                    1,
+                    0,
+                    1
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -194,9 +203,7 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     }
 
     private void checkReadWritePermission() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // 先判断有没有权限
             if (!Environment.isExternalStorageManager()) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 intent.setData(Uri.parse("package:" + getPackageName()));
@@ -227,11 +234,9 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         showToast(getString(resId));
     }
 
-
     public void playSoundDelayed(int speed) {
         playSoundThread.play(speed);
     }
-
 
     private Object objectLock = new Object();
 
@@ -264,12 +269,6 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         }
 
         public void play(int speed) {
-            //speed 1-100;
-            //100-1
-            //99-10
-            //98-20
-            //97-30
-
             int t = 3;
             if (speed > 85) {
                 t = 3;
@@ -283,7 +282,6 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
 
             interval = t;
             lastPlayTime = SystemClock.elapsedRealtime();
-            // Log.i("UHFRadarLocationFrag", " interval=" + interval );
         }
 
         public void stopPlay() {
