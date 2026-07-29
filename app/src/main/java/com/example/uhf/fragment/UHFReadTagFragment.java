@@ -377,24 +377,45 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     // 🟢 معالجة موحدة للبيانات الممسوحة
     // =============================================
     private void processScannedData(String data, String rssi) {
-        if (TextUtils.isEmpty(data)) return;
+    if (TextUtils.isEmpty(data)) return;
+    
+    // 🟢 حماية: التحقق من تهيئة Manager
+    if (settingsManager == null && mContext != null) {
+        settingsManager = MiraSettingsManager.getInstance(mContext);
+    }
 
-        // اهتزاز إذا كان مفعلاً
-        if (settingsManager.getBoolean("vibrate_on_scan", true) && getActivity() != null) {
+    // 🟢 اهتزاز إذا كان مفعلاً - مع حماية
+    try {
+        if (settingsManager != null && settingsManager.getBoolean("vibrate_on_scan", true) 
+            && getActivity() != null) {
             android.os.Vibrator vibrator = (android.os.Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
             if (vibrator != null && vibrator.hasVibrator()) {
                 vibrator.vibrate(100);
             }
         }
+    } catch (Exception e) {
+        Log.e(TAG, "Vibrate error: " + e.getMessage());
+    }
 
-        // تحليل GS1 DataMatrix إذا كان مفعلاً
-        if (settingsManager.getBoolean("parse_gs1", true) && data.contains("(")) {
+    // 🟢 تحليل GS1 DataMatrix
+    try {
+        if (settingsManager != null && settingsManager.getBoolean("parse_gs1", true) && data.contains("(")) {
             data = parseGS1Data(data);
         }
-
-        // إرسال إلى MIRA API
-        sendTagToMiraServer(data, rssi);
+    } catch (Exception e) {
+        Log.e(TAG, "GS1 parse error: " + e.getMessage());
     }
+
+    // 🟢 إرسال إلى MIRA API
+    try {
+        sendTagToMiraServer(data, rssi);
+    } catch (Exception e) {
+        Log.e(TAG, "Send error: " + e.getMessage());
+        if (getActivity() != null) {
+            Toast.makeText(mContext, "⚠️ خطأ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+}
 
     /**
  * 🟢 تحليل GS1 DataMatrix - يستخرج الرقم التسلسلي فقط
@@ -1060,207 +1081,181 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
     }
 
     private void sendTagToMiraServer(final String epc, final String rssi) {
-        if (getActivity() != null) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (settingsManager.getBoolean("show_mira_card", true)) {
-                        if (cardMiraResult != null) {
-                            cardMiraResult.setVisibility(View.VISIBLE);
-                            if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
-                            if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
-                        }
-                    }
-                }
-            });
-        }
-
-        new Thread(new Runnable() {
+    // 🟢 حماية: التحقق من التهيئة
+    if (settingsManager == null && mContext != null) {
+        settingsManager = MiraSettingsManager.getInstance(mContext);
+    }
+    
+    final boolean showCard = settingsManager != null && settingsManager.getBoolean("show_mira_card", true);
+    
+    if (getActivity() != null) {
+        getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                InputStream inputStream = null;
-                try {
-                    String apiUrl = settingsManager.getString("mira_api_url", 
-                        "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                    String apiKey = settingsManager.getString("mira_api_key", 
-                        "mira_gate_test071234567890abcdefghijklmnop");
-                    String gateId = settingsManager.getString("mira_gate_id", "handheld_c72");
-
-                    URL url = new URL(apiUrl);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                    conn.setRequestProperty("X-MIRA-API-Key", apiKey);
-                    conn.setConnectTimeout(5000);
-                    conn.setReadTimeout(5000);
-                    conn.setDoOutput(true);
-
-                    JSONObject jsonParam = new JSONObject();
-                    jsonParam.put("epc", epc);
-                    jsonParam.put("gate_id", gateId);
-                    if (rssi != null && !rssi.isEmpty()) {
-                        jsonParam.put("rssi", rssi);
-                    }
-
-                    try (OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonParam.toString().getBytes("utf-8");
-                        os.write(input, 0, input.length);
-                    }
-
-                    final int responseCode = conn.getResponseCode();
-
-                    if (responseCode >= 200 && responseCode < 300) {
-                        inputStream = conn.getInputStream();
-                    } else {
-                        inputStream = conn.getErrorStream();
-                    }
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line.trim());
-                    }
-
-                    final String jsonResponseStr = response.toString();
-
-                    Log.d(TAG, "MIRA Response Code: " + responseCode);
-
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
-                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
-
-                                try {
-                                    JSONObject jsonObject = new JSONObject(jsonResponseStr);
-
-                                    JSONObject decision = jsonObject.optJSONObject("decision");
-                                    JSONObject item = jsonObject.optJSONObject("item");
-
-                                    String decisionMessage = "";
-                                    String itemTitle = "";
-                                    String itemStatus = "";
-                                    String itemKarat = "";
-                                    double itemWeight = 0.0;
-                                    boolean allowed = false;
-                                    boolean hasItem = (item != null);
-
-                                    if (decision != null) {
-                                        decisionMessage = decision.optString("message", "غير معروف");
-                                        allowed = decision.optBoolean("allowed", false);
-                                    }
-
-                                    if (!processedTagsMap.containsKey(epc)) {
-                                        processedTagsMap.put(epc, true);
-                                        if (hasItem && allowed) {
-                                            countAllowed++;
-                                        } else if (hasItem && !allowed) {
-                                            countBlocked++;
-                                        } else {
-                                            countUnknown++;
-                                        }
-                                        updateBatchSummaryUI();
-                                    }
-
-                                    String primaryImageUrl = "";
-                                    if (item != null) {
-                                        itemTitle = item.optString("title", "غير محدد");
-                                        itemStatus = item.optString("status", "");
-                                        itemKarat = item.optString("karat", "");
-                                        itemWeight = item.optDouble("weight", 0.0);
-
-                                        JSONArray imagesArray = item.optJSONArray("images");
-                                        if (imagesArray != null && imagesArray.length() > 0) {
-                                            JSONObject firstImage = imagesArray.getJSONObject(0);
-                                            primaryImageUrl = firstImage.optString("image_url", "");
-                                        }
-                                    }
-
-                                    loadItemImage(primaryImageUrl);
-                                    updateStatusBadge(allowed, hasItem);
-
-                                    if (tvMiraStatus != null) {
-                                        if (allowed && hasItem) {
-                                            tvMiraStatus.setText("✅ خروج مصرح");
-                                            tvMiraStatus.setTextColor(Color.parseColor("#2E7D32"));
-                                        } else if (!allowed && hasItem) {
-                                            tvMiraStatus.setText("🚨 غير مصرح بالخروج");
-                                            tvMiraStatus.setTextColor(Color.RED);
-                                        } else {
-                                            tvMiraStatus.setText("⚠️ " + decisionMessage);
-                                            tvMiraStatus.setTextColor(Color.parseColor("#FF9800"));
-                                        }
-                                    }
-
-                                    if (tvMiraProductName != null) {
-                                        StringBuilder productInfo = new StringBuilder();
-                                        if (!itemTitle.isEmpty() && !itemTitle.equals("غير محدد")) {
-                                            productInfo.append("📦 ").append(itemTitle);
-                                        } else {
-                                            productInfo.append("📦 قطعة غير مسجلة");
-                                        }
-                                        if (!itemKarat.isEmpty()) {
-                                            productInfo.append("\n💎 عيار: ").append(itemKarat);
-                                        }
-                                        if (itemWeight > 0) {
-                                            productInfo.append("\n⚖️ الوزن: ").append(itemWeight).append(" غرام");
-                                        }
-                                        tvMiraProductName.setText(productInfo.toString());
-                                    }
-
-                                    if (tvMiraEpcGtin != null) {
-                                        StringBuilder epcInfo = new StringBuilder();
-                                        epcInfo.append("🏷️ EPC: ").append(epc);
-                                        if (!itemStatus.isEmpty()) {
-                                            String statusArabic;
-                                            switch (itemStatus) {
-                                                case "sold": statusArabic = "مباع"; break;
-                                                case "available": statusArabic = "متاح"; break;
-                                                case "reserved": statusArabic = "محجوز"; break;
-                                                default: statusArabic = itemStatus;
-                                            }
-                                            epcInfo.append("\n📋 الحالة: ").append(statusArabic);
-                                        }
-                                        tvMiraEpcGtin.setText(epcInfo.toString());
-                                    }
-
-                                } catch (Exception e) {
-                                    Log.e(TAG, "JSON Parse Error: " + e.getMessage(), e);
-                                    if (tvMiraStatus != null) {
-                                        tvMiraStatus.setText("⚠️ خطأ في تحليل البيانات");
-                                        tvMiraStatus.setTextColor(Color.RED);
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                } catch (final Exception e) {
-                    Log.e(TAG, "MIRA Connection Error", e);
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
-                                if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
-                                if (tvMiraStatus != null) {
-                                    tvMiraStatus.setText("❌ خطأ في الاتصال: " + e.getMessage());
-                                    tvMiraStatus.setTextColor(Color.RED);
-                                }
-                                if (tvMiraProductName != null) {
-                                    tvMiraProductName.setText("تأكد من اتصال الإنترنت");
-                                }
-                            }
-                        });
-                    }
-                } finally {
-                    if (inputStream != null) {
-                        try { inputStream.close(); } catch (Exception ignored) {}
-                    }
+                if (showCard && cardMiraResult != null) {
+                    cardMiraResult.setVisibility(View.VISIBLE);
+                    if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
+                    if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
                 }
             }
-        }).start();
+        });
     }
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            InputStream inputStream = null;
+            try {
+                String apiUrl = "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize";
+                String apiKey = "mira_gate_test071234567890abcdefghijklmnop";
+                String gateId = "handheld_c72";
+                
+                if (settingsManager != null) {
+                    apiUrl = settingsManager.getString("mira_api_url", apiUrl);
+                    apiKey = settingsManager.getString("mira_api_key", apiKey);
+                    gateId = settingsManager.getString("mira_gate_id", gateId);
+                }
+
+                URL url = new URL(apiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("X-MIRA-API-Key", apiKey);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setDoOutput(true);
+
+                JSONObject jsonParam = new JSONObject();
+                jsonParam.put("epc", epc);
+                jsonParam.put("gate_id", gateId);
+                if (rssi != null && !rssi.isEmpty()) {
+                    jsonParam.put("rssi", rssi);
+                }
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = jsonParam.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                final int responseCode = conn.getResponseCode();
+                
+                if (responseCode >= 200 && responseCode < 300) {
+                    inputStream = conn.getInputStream();
+                } else {
+                    inputStream = conn.getErrorStream();
+                }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line.trim());
+                }
+
+                final String jsonResponseStr = response.toString();
+                Log.d(TAG, "MIRA Response: " + responseCode);
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                            if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+
+                            try {
+                                JSONObject jsonObject = new JSONObject(jsonResponseStr);
+                                JSONObject decision = jsonObject.optJSONObject("decision");
+                                JSONObject item = jsonObject.optJSONObject("item");
+                                JSONObject barcode = jsonObject.optJSONObject("barcode");
+
+                                boolean allowed = decision != null && decision.optBoolean("allowed", false);
+                                String message = decision != null ? decision.optString("message", "") : "";
+                                boolean hasItem = (item != null);
+
+                                // تحديث الإحصائيات
+                                if (!processedTagsMap.containsKey(epc)) {
+                                    processedTagsMap.put(epc, true);
+                                    if (hasItem && allowed) countAllowed++;
+                                    else if (hasItem && !allowed) countBlocked++;
+                                    else countUnknown++;
+                                    updateBatchSummaryUI();
+                                }
+
+                                // 🟢 عرض serial من الباركود إذا وجد
+                                String displayCode = epc;
+                                if (barcode != null && !barcode.optString("serial_no", "").isEmpty()) {
+                                    displayCode = barcode.optString("serial_no");
+                                }
+
+                                // صورة
+                                String imageUrl = "";
+                                if (item != null) {
+                                    JSONArray images = item.optJSONArray("images");
+                                    if (images != null && images.length() > 0) {
+                                        imageUrl = images.getJSONObject(0).optString("image_url", "");
+                                    }
+                                }
+                                loadItemImage(imageUrl);
+                                updateStatusBadge(allowed, hasItem);
+
+                                // الحالة
+                                if (tvMiraStatus != null) {
+                                    tvMiraStatus.setText(message);
+                                    tvMiraStatus.setTextColor(allowed ? Color.parseColor("#2E7D32") : 
+                                        (hasItem ? Color.RED : Color.parseColor("#FF9800")));
+                                }
+
+                                // اسم المنتج
+                                if (tvMiraProductName != null && item != null) {
+                                    String title = item.optString("title", "غير محدد");
+                                    String karat = item.optString("karat", "");
+                                    double weight = item.optDouble("weight", 0.0);
+                                    
+                                    StringBuilder info = new StringBuilder("📦 ").append(title);
+                                    if (!karat.isEmpty()) info.append("\n💎 عيار: ").append(karat);
+                                    if (weight > 0) info.append("\n⚖️ الوزن: ").append(weight).append(" غرام");
+                                    tvMiraProductName.setText(info.toString());
+                                }
+
+                                // الكود
+                                if (tvMiraEpcGtin != null) {
+                                    String status = item != null ? item.optString("status", "") : "";
+                                    StringBuilder epcInfo = new StringBuilder("🏷️ ").append(displayCode);
+                                    if (!status.isEmpty()) {
+                                        String ar = status.equals("sold") ? "مباع" : status.equals("available") ? "متاح" : status;
+                                        epcInfo.append("\n📋 الحالة: ").append(ar);
+                                    }
+                                    tvMiraEpcGtin.setText(epcInfo.toString());
+                                }
+
+                            } catch (Exception e) {
+                                Log.e(TAG, "JSON error: " + e.getMessage());
+                                if (tvMiraStatus != null) {
+                                    tvMiraStatus.setText("⚠️ خطأ في البيانات");
+                                    tvMiraStatus.setTextColor(Color.RED);
+                                }
+                            }
+                        }
+                    });
+                }
+
+            } catch (final Exception e) {
+                Log.e(TAG, "Connection error: " + e.getMessage());
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.GONE);
+                        if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.VISIBLE);
+                        if (tvMiraStatus != null) {
+                            tvMiraStatus.setText("❌ خطأ اتصال");
+                            tvMiraStatus.setTextColor(Color.RED);
+                        }
+                    });
+                }
+            } finally {
+                if (inputStream != null) {
+                    try { inputStream.close(); } catch (Exception ignored) {}
+                }
+            }
+        }
+    }).start();
                 }
