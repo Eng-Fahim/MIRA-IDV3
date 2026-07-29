@@ -396,27 +396,46 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         sendTagToMiraServer(data, rssi);
     }
 
-    // =============================================
-    // 🟢 تحليل GS1 DataMatrix
-    // =============================================
-    private String parseGS1Data(String gs1Data) {
-        // مثال: "(01)06291337000016(21)ABC123(3103)005200"
-        // نستخرج GTIN-13: الأرقام بعد (01)
-        try {
-            if (gs1Data.contains("(01)")) {
-                int start = gs1Data.indexOf("(01)") + 4;
-                String gtin = gs1Data.substring(start, Math.min(start + 14, gs1Data.length()));
-                // إزالة الرقم الأخير (check digit) إذا كان 14 رقم
-                if (gtin.length() >= 13) {
-                    gtin = gtin.substring(0, 13);
-                }
-                return gtin;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "GS1 Parse error: " + e.getMessage());
+    /**
+ * 🟢 تحليل GS1 DataMatrix - يستخرج الرقم التسلسلي فقط
+ * 
+ * أمثلة المدخلات:
+ * - "BOU000381"
+ * - "BWA-26000101"  
+ * - "(21)BOU000381"
+ * - "(01)06291337000016(21)BWA-26000101(3103)005200"
+ * 
+ * في جميع الحالات: الرقم التسلسلي هو ما يهمنا للبحث
+ */
+private String parseGS1Data(String gs1Data) {
+    if (TextUtils.isEmpty(gs1Data)) return gs1Data;
+    
+    String serial = gs1Data.trim();
+    
+    try {
+        // 🟢 إذا كان GS1 كامل - استخرج من (21)
+        if (gs1Data.contains("(21)")) {
+            int start = gs1Data.indexOf("(21)") + 4;
+            int end = gs1Data.indexOf("(", start);
+            if (end == -1) end = gs1Data.length();
+            serial = gs1Data.substring(start, end).trim();
         }
-        return gs1Data;
+        // 🟢 إذا كان GS1 بدون (21) - استخرج من البداية
+        else if (gs1Data.contains("(01)")) {
+            // قد يكون GTIN فقط بدون Serial - نستخدمه كما هو
+            serial = gs1Data;
+        }
+        // 🟢 إذا كان Serial مباشر - نستخدمه كما هو
+        // BOU000381, BWA-26000101, MIRA-20260729-00042
+        
+        Log.d(TAG, "GS1 Parsed Serial: " + serial);
+        
+    } catch (Exception e) {
+        Log.e(TAG, "GS1 Parse error: " + e.getMessage());
     }
+    
+    return serial;
+}
 
     // =============================================
     // 🟢 readTag معدلة لدعم أوضاع المسح
@@ -1244,4 +1263,4 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
             }
         }).start();
     }
-    }
+                }
