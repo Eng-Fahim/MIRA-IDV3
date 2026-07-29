@@ -62,6 +62,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.content.Intent;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 /**
  * MIRA Bridge Scan Fragment
  * 
@@ -346,10 +350,16 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     if (etGtinInput != null) etGtinInput.setHint("📷 امسح QR/GS1 أو أدخل يدوياً");
                     break;
                 case "hybrid":
-                    // إظهار الكل
-                    if (BtInventory != null) BtInventory.setText("▶ ابدأ المسح (RFID)");
-                    if (etGtinInput != null) etGtinInput.setHint("🔍 RFID / QR / GS1 / EPC");
-                    break;
+    if (BtInventory != null) BtInventory.setText("▶ RFID");
+    if (etGtinInput != null) etGtinInput.setHint("🔍 RFID / 📷 QR / ⌨️ EPC");
+    // في الوضع الهجين، الضغطة الطويلة تفتح الكاميرا
+    if (BtInventory != null) {
+        BtInventory.setOnLongClickListener(v -> {
+            openCameraScanner();
+            return true;
+        });
+    }
+    break;
                 case "manual":
                     // إخفاء RFID، إظهار يدوي فقط
                     if (BtInventory != null) BtInventory.setText("⌨️ إدخال يدوي");
@@ -412,36 +422,48 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     // 🟢 readTag معدلة لدعم أوضاع المسح
     // =============================================
     private void readTag() {
-        switch (scanMode) {
-            case "camera":
-                openCameraScanner();
-                break;
-            case "manual":
-                // تركيز على حقل الإدخال اليدوي
-                if (etGtinInput != null) etGtinInput.requestFocus();
-                Toast.makeText(mContext, "⌨️ أدخل GTIN-13 أو EPC واضغط فحص", Toast.LENGTH_SHORT).show();
-                break;
-            case "hybrid":
-            case "rfid":
-            default:
-                readTagRFID();
-                break;
-        }
+    switch (scanMode) {
+        case "camera":
+            openCameraScanner(); // ✅ الآن يفتح الكاميرا فعلياً
+            break;
+        case "manual":
+            if (etGtinInput != null) etGtinInput.requestFocus();
+            Toast.makeText(mContext, "⌨️ أدخل GTIN-13 أو EPC واضغط فحص", Toast.LENGTH_SHORT).show();
+            break;
+        case "hybrid":
+        case "rfid":
+        default:
+            readTagRFID();
+            break;
     }
+}
 
     // =============================================
-    // 🟢 فتح كاميرا الماسح
-    // =============================================
-    private void openCameraScanner() {
-        // TODO: دمج مكتبة ZXing أو Google ML Kit لمسح QR/GS1
-        Toast.makeText(mContext, "📷 الكاميرا قيد التطوير - استخدم الإدخال اليدوي حالياً", Toast.LENGTH_LONG).show();
+// 🟢 فتح كاميرا الماسح فعلياً
+private void openCameraScanner() {
+    try {
+        // استخدام ZXing لمسح الباركود
+        IntentIntegrator integrator = new IntentIntegrator(getActivity());
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
+        integrator.setPrompt("📷 وجه الكاميرا نحو QR/GS1 DataMatrix");
+        integrator.setCameraId(0); // الكاميرا الخلفية
+        integrator.setBeepEnabled(settingsManager.getBoolean("sound_on_scan", true));
+        integrator.setBarcodeImageEnabled(false);
+        integrator.setOrientationLocked(true);
         
-        // فتح حقل الإدخال اليدوي كبديل
-        if (etGtinInput != null) {
-            etGtinInput.requestFocus();
-            etGtinInput.setHint("📷 امسح أو أدخل الرمز يدوياً");
+        // إطار المسح
+        if (settingsManager.getBoolean("show_scan_frame", true)) {
+            integrator.setPrompt("🎯 ضع الرمز داخل الإطار");
         }
+        
+        integrator.initiateScan();
+    } catch (Exception e) {
+        Log.e(TAG, "Camera open error: " + e.getMessage());
+        // فشل الكاميرا → الرجوع للإدخال اليدوي
+        Toast.makeText(mContext, "⚠️ تعذر فتح الكاميرا - استخدم الإدخال اليدوي", Toast.LENGTH_LONG).show();
+        if (etGtinInput != null) etGtinInput.requestFocus();
     }
+}
 
     // =============================================
     // 🟢 قراءة RFID (الكود الأصلي)
@@ -650,11 +672,30 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        stopInventory();
+   @Override
+public void onPause() {
+    super.onPause();
+    stopInventory();
+}
+
+// ✅ هنا المكان الصحيح:
+@Override
+public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+    
+    if (result != null && result.getContents() != null) {
+        String scannedData = result.getContents();
+        Log.d(TAG, "Camera scanned: " + scannedData);
+        processScannedData(scannedData, "-50");
+        Toast.makeText(mContext, "✅ تم المسح: " + scannedData, Toast.LENGTH_SHORT).show();
+        
+        if (settingsManager.getBoolean("auto_scan", false)) {
+            new Handler().postDelayed(() -> openCameraScanner(), 1500);
+        }
+    } else {
+        super.onActivityResult(requestCode, resultCode, data);
     }
+}
 
     private void addDataToList(UHFTAGInfo info) {
         String epc = info.getEPC();
@@ -1203,4 +1244,4 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }).start();
     }
-                                                      }
+    }
