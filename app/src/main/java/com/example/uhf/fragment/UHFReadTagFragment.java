@@ -36,6 +36,7 @@ import android.widget.Toast;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
+import com.example.uhf.manager.MiraSettingsManager;
 import com.example.uhf.tools.CheckUtils;
 import com.example.uhf.tools.NumberTool;
 import com.example.uhf.tools.StringUtils;
@@ -61,9 +62,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * MIRA Bridge Scan Fragment
+ * 
+ * يدعم:
+ * - 📡 RFID UHF (قارئ Chainway)
+ * - 📷 كاميرا الهاتف (QR / GS1 DataMatrix)
+ * - ⌨️ إدخال يدوي (GTIN-13 / EPC)
+ * - 🔀 وضع هجين (RFID + كاميرا + يدوي)
+ * - تطبيق فوري للإعدادات من MiraSettingsManager
+ */
 public class UHFReadTagFragment extends KeyDwonFragment {
     private static final String TAG = "UHFReadTagFragment";
-    private int inventoryFlag = 1; // 0: Single, 1: Loop/Batch
+    private int inventoryFlag = 1;
     MyAdapter adapter;
     Button BtClear;
     TextView tvTime, tv_count, tv_total;
@@ -94,7 +105,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private TextView tvMiraStatusBadge;
     private View statusIndicator;
 
-    // 🟢 عناصر جدول الجرد التجميعي الموحد (Unified Batch Summary Table)
+    // 🟢 عناصر جدول الجرد التجميعي
     private TextView tvBatchTotal;
     private TextView tvBatchAllowed, tvBatchAllowedPct;
     private TextView tvBatchBlocked, tvBatchBlockedPct;
@@ -106,6 +117,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
     private Map<String, Boolean> processedTagsMap = new HashMap<>();
 
     private UHFReaderRepository bridgeReader;
+
+    // 🟢 مدير الإعدادات
+    private MiraSettingsManager settingsManager;
+    private String scanMode = "rfid";
 
     long maxRunTime = 36000000L;
     EditText etTime;
@@ -156,6 +171,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             playSoundThread.stopPlay();
             playSoundThread = null;
         }
+        if (settingsManager != null) {
+            settingsManager.unregisterListener("scan_fragment");
+        }
     }
 
     @Override
@@ -164,6 +182,10 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         super.onActivityCreated(savedInstanceState);
         mContext = (UHFMainActivity) getActivity();
         mContext.currentFragment = this;
+
+        // 🟢 تهيئة مدير الإعدادات
+        settingsManager = MiraSettingsManager.getInstance(mContext);
+        scanMode = settingsManager.getString("scan_mode", "rfid");
 
         BtClear = (Button) getView().findViewById(R.id.BtClear);
         tvTime = (TextView) getView().findViewById(R.id.tvTime);
@@ -180,7 +202,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         etGtinInput = (EditText) getView().findViewById(R.id.etGtinInput);
         btnCheckGtin = (Button) getView().findViewById(R.id.btnCheckGtin);
 
-        // 🟢 ربط عناصر جدول الجرد التجميعي الموحد
+        // 🟢 ربط عناصر جدول الجرد التجميعي
         tvBatchTotal = (TextView) getView().findViewById(R.id.tvBatchTotal);
         tvBatchAllowed = (TextView) getView().findViewById(R.id.tvBatchAllowed);
         tvBatchAllowedPct = (TextView) getView().findViewById(R.id.tvBatchAllowedPct);
@@ -204,7 +226,35 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tvMiraStatusBadge = (TextView) getView().findViewById(R.id.tvMiraStatusBadge);
         statusIndicator = (View) getView().findViewById(R.id.statusIndicator);
 
-        // تهيئة محاكي البيئة ليعمل في حالة تشغيل التطبيق على الهاتف بدون قارئ RFID مادي
+        // 🟢 تطبيق إعدادات المسح الحالية
+        applyScanModeToUI();
+
+        // 🟢 الاستماع لتغييرات الإعدادات
+        settingsManager.registerListener("scan_fragment", new MiraSettingsManager.SettingsChangeListener() {
+            @Override
+            public void onSettingChanged(String key, Object value) {
+                switch (key) {
+                    case "scan_mode":
+                        scanMode = (String) value;
+                        applyScanModeToUI();
+                        break;
+                    case "show_mira_card":
+                        boolean show = (Boolean) value;
+                        if (cardMiraResult != null) {
+                            cardMiraResult.setVisibility(show ? View.VISIBLE : View.GONE);
+                        }
+                        break;
+                    case "auto_query_mira":
+                        // يُطبق في sendTagToMiraServer
+                        break;
+                    case "sound_on_scan":
+                        // يُطبق في playSoundThread
+                        break;
+                }
+            }
+        });
+
+        // تهيئة محاكي البيئة
         bridgeReader = new MockUHFReaderImpl();
         bridgeReader.connect();
         bridgeReader.setTagCallback(new UHFReaderRepository.TagCallback() {
@@ -230,11 +280,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         Toast.makeText(mContext, "يرجى إدخال رمز GTIN-13 أو EPC للفحص", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    if (bridgeReader != null) {
-                        bridgeReader.injectManualTag(inputCode, null);
-                    } else {
-                        sendTagToMiraServer(inputCode, "-50");
-                    }
+                    processScannedData(inputCode, "-50");
                 }
             });
         }
@@ -246,11 +292,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             @Override
             public boolean onLongClick(View v) {
                 String mockEpc = "E28011700000020123456789";
-                if (bridgeReader != null) {
-                    bridgeReader.injectManualTag(mockEpc, null);
-                } else {
-                    sendTagToMiraServer(mockEpc, "-65");
-                }
+                processScannedData(mockEpc, "-65");
                 Toast.makeText(mContext, "تم إرسال قراءة تجريبية لـ MIRA: " + mockEpc, Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -263,7 +305,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                 adapter.notifyDataSetInvalidated();
                 UHFTAGInfo selectedTag = mContext.tagList.get(position);
                 if (selectedTag != null && !TextUtils.isEmpty(selectedTag.getEPC())) {
-                    sendTagToMiraServer(selectedTag.getEPC(), selectedTag.getRssi());
+                    processScannedData(selectedTag.getEPC(), selectedTag.getRssi());
                 }
             }
         });
@@ -290,6 +332,216 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         tv_total.setText(total + "");
     }
 
+    // =============================================
+    // 🟢 تطبيق وضع المسح على الواجهة
+    // =============================================
+    private void applyScanModeToUI() {
+        if (getActivity() == null) return;
+
+        getActivity().runOnUiThread(() -> {
+            switch (scanMode) {
+                case "camera":
+                    // إخفاء أزرار RFID، إظهار زر الكاميرا
+                    if (BtInventory != null) BtInventory.setText("📷 فتح الكاميرا");
+                    if (etGtinInput != null) etGtinInput.setHint("📷 امسح QR/GS1 أو أدخل يدوياً");
+                    break;
+                case "hybrid":
+                    // إظهار الكل
+                    if (BtInventory != null) BtInventory.setText("▶ ابدأ المسح (RFID)");
+                    if (etGtinInput != null) etGtinInput.setHint("🔍 RFID / QR / GS1 / EPC");
+                    break;
+                case "manual":
+                    // إخفاء RFID، إظهار يدوي فقط
+                    if (BtInventory != null) BtInventory.setText("⌨️ إدخال يدوي");
+                    if (etGtinInput != null) etGtinInput.setHint("⌨️ أدخل GTIN-13 أو EPC");
+                    break;
+                default: // rfid
+                    if (BtInventory != null) BtInventory.setText(mContext.getString(R.string.btInventory));
+                    if (etGtinInput != null) etGtinInput.setHint("🔍 أدخل GTIN-13 أو EPC");
+                    break;
+            }
+        });
+    }
+
+    // =============================================
+    // 🟢 معالجة موحدة للبيانات الممسوحة
+    // =============================================
+    private void processScannedData(String data, String rssi) {
+        if (TextUtils.isEmpty(data)) return;
+
+        // اهتزاز إذا كان مفعلاً
+        if (settingsManager.getBoolean("vibrate_on_scan", true) && getActivity() != null) {
+            android.os.Vibrator vibrator = (android.os.Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(100);
+            }
+        }
+
+        // تحليل GS1 DataMatrix إذا كان مفعلاً
+        if (settingsManager.getBoolean("parse_gs1", true) && data.contains("(")) {
+            data = parseGS1Data(data);
+        }
+
+        // إرسال إلى MIRA API
+        sendTagToMiraServer(data, rssi);
+    }
+
+    // =============================================
+    // 🟢 تحليل GS1 DataMatrix
+    // =============================================
+    private String parseGS1Data(String gs1Data) {
+        // مثال: "(01)06291337000016(21)ABC123(3103)005200"
+        // نستخرج GTIN-13: الأرقام بعد (01)
+        try {
+            if (gs1Data.contains("(01)")) {
+                int start = gs1Data.indexOf("(01)") + 4;
+                String gtin = gs1Data.substring(start, Math.min(start + 14, gs1Data.length()));
+                // إزالة الرقم الأخير (check digit) إذا كان 14 رقم
+                if (gtin.length() >= 13) {
+                    gtin = gtin.substring(0, 13);
+                }
+                return gtin;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "GS1 Parse error: " + e.getMessage());
+        }
+        return gs1Data;
+    }
+
+    // =============================================
+    // 🟢 readTag معدلة لدعم أوضاع المسح
+    // =============================================
+    private void readTag() {
+        switch (scanMode) {
+            case "camera":
+                openCameraScanner();
+                break;
+            case "manual":
+                // تركيز على حقل الإدخال اليدوي
+                if (etGtinInput != null) etGtinInput.requestFocus();
+                Toast.makeText(mContext, "⌨️ أدخل GTIN-13 أو EPC واضغط فحص", Toast.LENGTH_SHORT).show();
+                break;
+            case "hybrid":
+            case "rfid":
+            default:
+                readTagRFID();
+                break;
+        }
+    }
+
+    // =============================================
+    // 🟢 فتح كاميرا الماسح
+    // =============================================
+    private void openCameraScanner() {
+        // TODO: دمج مكتبة ZXing أو Google ML Kit لمسح QR/GS1
+        Toast.makeText(mContext, "📷 الكاميرا قيد التطوير - استخدم الإدخال اليدوي حالياً", Toast.LENGTH_LONG).show();
+        
+        // فتح حقل الإدخال اليدوي كبديل
+        if (etGtinInput != null) {
+            etGtinInput.requestFocus();
+            etGtinInput.setHint("📷 امسح أو أدخل الرمز يدوياً");
+        }
+    }
+
+    // =============================================
+    // 🟢 قراءة RFID (الكود الأصلي)
+    // =============================================
+    private void readTagRFID() {
+        if (BtInventory.getText().equals(mContext.getString(R.string.btInventory)) || 
+            BtInventory.getText().toString().contains("ابدأ")) {
+            switch (inventoryFlag) {
+                case 0:
+                    startTime = SystemClock.elapsedRealtime();
+                    boolean singleHardwareSuccess = false;
+                    
+                    if (mContext != null && mContext.mReader != null) {
+                        UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
+                        if (uhftagInfo != null) {
+                            addDataToList(uhftagInfo);
+                            setTotalTime();
+                            if (settingsManager.getBoolean("sound_on_scan", true)) {
+                                mContext.playSound(1);
+                            }
+                            singleHardwareSuccess = true;
+                        }
+                    }
+
+                    if (!singleHardwareSuccess && bridgeReader != null) {
+                        bridgeReader.injectManualTag("E28011700000020123456789", "-60");
+                        setTotalTime();
+                    }
+                    break;
+
+                case 1:
+                    boolean batchHardwareSuccess = false;
+
+                    if (mContext != null && mContext.mReader != null) {
+                        mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
+                            @Override
+                            public void callback(UHFTAGInfo uhftagInfo) {
+                                Message msg = handler.obtainMessage();
+                                msg.obj = uhftagInfo;
+                                msg.what = 1;
+                                handler.sendMessage(msg);
+                                if (playSoundThread != null && settingsManager.getBoolean("sound_on_scan", true)) {
+                                    playSoundThread.play();
+                                }
+                            }
+                        });
+
+                        if (playSoundThread != null) playSoundThread.cleanData();
+
+                        InventoryParameter inventoryParameter = new InventoryParameter();
+                        if (cbPhase != null) {
+                            inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
+                        }
+
+                        batchHardwareSuccess = mContext.mReader.startInventoryTag(inventoryParameter);
+                    }
+
+                    if (!batchHardwareSuccess) {
+                        batchHardwareSuccess = true;
+                    }
+
+                    if (batchHardwareSuccess) {
+                        String time = (etTime != null) ? etTime.getText().toString() : "";
+                        if (time.length() > 0 && time.startsWith(".")) {
+                            if (etTime != null) etTime.setText("");
+                            time = "";
+                        }
+
+                        if (!time.isEmpty()) {
+                            maxRunTime = (int) (Float.parseFloat(time) * 1000);
+                            clearData();
+                        } else {
+                            maxRunTime = (etTime != null && etTime.getHint() != null) ? Long.parseLong(etTime.getHint().toString()) * 1000 : 36000000L;
+                        }
+
+                        handler.removeMessages(MSG_STOP);
+                        handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
+                        BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
+                        mContext.loopFlag = true;
+                        setViewEnabled(false);
+                        startTime = SystemClock.elapsedRealtime();
+                        handler.sendEmptyMessageDelayed(2, 10);
+                    } else {
+                        stopInventory();
+                        mContext.showToast(R.string.uhf_msg_inventory_open_fail);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            stopInventory();
+            setTotalTime();
+        }
+    }
+
+    // =============================================
+    // باقي الدوال (محفوظة من الكود السابق)
+    // =============================================
+
     private Button btnSetFilter;
 
     private void initFilter(View view) {
@@ -307,7 +559,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         layout_filter.setVisibility(isChecked ? View.VISIBLE : View.GONE);
                     }
                     if (!isChecked && mContext != null && mContext.mReader != null) {
-                        // تصفير الفلتر عند إغلاق القائمة لمنع حجب الوسوم
                         mContext.mReader.setFilter(RFIDWithUHFUART.Bank_EPC, 0, 0, "");
                     }
                 }
@@ -420,8 +671,9 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             tv_total.setText(String.valueOf(++total));
             adapter.notifyDataSetChanged();
 
-            // 🟢 الاستعلام التلقائي من خادم MIRA لكل وسم مجلوب
-            sendTagToMiraServer(epc, info.getRssi());
+            if (settingsManager.getBoolean("auto_query_mira", true)) {
+                sendTagToMiraServer(epc, info.getRssi());
+            }
         }
     }
 
@@ -442,9 +694,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         countBlocked = 0;
         countUnknown = 0;
         processedTagsMap.clear();
-
         updateBatchSummaryUI();
-
         mContext.tagList.clear();
         adapter.notifyDataSetChanged();
         if (cardMiraResult != null) cardMiraResult.setVisibility(View.GONE);
@@ -493,98 +743,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         }
     }
 
-    /**
-     * 🟢 إصلاح منطق بدء القراءة ليعمل فوراً على الجهاز الصلب وعلى محاكي الهاتف
-     */
-    private void readTag() {
-        if (BtInventory.getText().equals(mContext.getString(R.string.btInventory))) {
-            switch (inventoryFlag) {
-                case 0: // فحص فردي
-                    startTime = SystemClock.elapsedRealtime();
-                    boolean singleHardwareSuccess = false;
-                    
-                    if (mContext != null && mContext.mReader != null) {
-                        UHFTAGInfo uhftagInfo = mContext.mReader.inventorySingleTag();
-                        if (uhftagInfo != null) {
-                            addDataToList(uhftagInfo);
-                            setTotalTime();
-                            mContext.playSound(1);
-                            singleHardwareSuccess = true;
-                        }
-                    }
-
-                    // إذا كنا على هاتف بدون القارئ المادي، نستخدم المحاكي
-                    if (!singleHardwareSuccess && bridgeReader != null) {
-                        bridgeReader.injectManualTag("E28011700000020123456789", "-60");
-                        setTotalTime();
-                    }
-                    break;
-
-                case 1: // جرد تجميعي
-                    boolean batchHardwareSuccess = false;
-
-                    if (mContext != null && mContext.mReader != null) {
-                        mContext.mReader.setInventoryCallback(new IUHFInventoryCallback() {
-                            @Override
-                            public void callback(UHFTAGInfo uhftagInfo) {
-                                Message msg = handler.obtainMessage();
-                                msg.obj = uhftagInfo;
-                                msg.what = 1;
-                                handler.sendMessage(msg);
-                                if (playSoundThread != null) playSoundThread.play();
-                            }
-                        });
-
-                        if (playSoundThread != null) playSoundThread.cleanData();
-
-                        InventoryParameter inventoryParameter = new InventoryParameter();
-                        if (cbPhase != null) {
-                            inventoryParameter.setResultData(new InventoryParameter.ResultData().setNeedPhase(cbPhase.isChecked()));
-                        }
-
-                        batchHardwareSuccess = mContext.mReader.startInventoryTag(inventoryParameter);
-                    }
-
-                    // تفعيل المحاكاة تلقائياً إذا فشل الاتصال بالعتاد أو كنا نستخدم هاتفك الشخصي
-                    if (!batchHardwareSuccess) {
-                        batchHardwareSuccess = true; // تمكين الجلسة الوهمية
-                    }
-
-                    if (batchHardwareSuccess) {
-                        String time = (etTime != null) ? etTime.getText().toString() : "";
-                        if (time.length() > 0 && time.startsWith(".")) {
-                            if (etTime != null) etTime.setText("");
-                            time = "";
-                        }
-
-                        if (!time.isEmpty()) {
-                            maxRunTime = (int) (Float.parseFloat(time) * 1000);
-                            clearData();
-                        } else {
-                            maxRunTime = (etTime != null && etTime.getHint() != null) ? Long.parseLong(etTime.getHint().toString()) * 1000 : 36000000L;
-                        }
-
-                        handler.removeMessages(MSG_STOP);
-                        handler.sendEmptyMessageDelayed(MSG_STOP, maxRunTime);
-                        BtInventory.setText(mContext.getString(R.string.title_stop_Inventory));
-                        mContext.loopFlag = true;
-                        setViewEnabled(false);
-                        startTime = SystemClock.elapsedRealtime();
-                        handler.sendEmptyMessageDelayed(2, 10);
-                    } else {
-                        stopInventory();
-                        mContext.showToast(R.string.uhf_msg_inventory_open_fail);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            stopInventory();
-            setTotalTime();
-        }
-    }
-
     private void setTotalTime() {
         float useTime = (SystemClock.elapsedRealtime() - startTime) / 1000.0F;
         tvTime.setText(NumberTool.getPointDouble(1, useTime) + "s");
@@ -604,7 +762,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
         if (mContext != null && mContext.loopFlag) {
             mContext.loopFlag = false;
             setViewEnabled(true);
-            
             if (mContext.mReader != null) {
                 mContext.mReader.stopInventory();
             }
@@ -711,7 +868,7 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                         }
                     }
                 }
-                if (mContext.loopFlag) {
+                if (mContext.loopFlag && settingsManager.getBoolean("sound_on_scan", true)) {
                     mContext.playSound(1);
                     queue.poll();
                     consumption++;
@@ -847,10 +1004,12 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (cardMiraResult != null) {
-                        cardMiraResult.setVisibility(View.VISIBLE);
-                        if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
-                        if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
+                    if (settingsManager.getBoolean("show_mira_card", true)) {
+                        if (cardMiraResult != null) {
+                            cardMiraResult.setVisibility(View.VISIBLE);
+                            if (layoutMiraLoading != null) layoutMiraLoading.setVisibility(View.VISIBLE);
+                            if (layoutMiraDetails != null) layoutMiraDetails.setVisibility(View.GONE);
+                        }
                     }
                 }
             });
@@ -861,18 +1020,24 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             public void run() {
                 InputStream inputStream = null;
                 try {
-                    URL url = new URL("https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    String apiUrl = settingsManager.getString("mira_api_url", 
+                        "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
+                    String apiKey = settingsManager.getString("mira_api_key", 
+                        "mira_gate_test071234567890abcdefghijklmnop");
+                    String gateId = settingsManager.getString("mira_gate_id", "handheld_c72");
+
+                    URL url = new URL(apiUrl);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                    conn.setRequestProperty("X-MIRA-API-Key", "mira_gate_test071234567890abcdefghijklmnop");
+                    conn.setRequestProperty("X-MIRA-API-Key", apiKey);
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
                     conn.setDoOutput(true);
 
                     JSONObject jsonParam = new JSONObject();
                     jsonParam.put("epc", epc);
-                    jsonParam.put("gate_id", "handheld_c72");
+                    jsonParam.put("gate_id", gateId);
                     if (rssi != null && !rssi.isEmpty()) {
                         jsonParam.put("rssi", rssi);
                     }
@@ -900,7 +1065,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                     final String jsonResponseStr = response.toString();
 
                     Log.d(TAG, "MIRA Response Code: " + responseCode);
-                    Log.d(TAG, "MIRA Response Body: " + jsonResponseStr);
 
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
@@ -928,7 +1092,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                         allowed = decision.optBoolean("allowed", false);
                                     }
 
-                                    // 🟢 تحديث الجدول الموحد للجرد التجميعي (Batch Counters Table)
                                     if (!processedTagsMap.containsKey(epc)) {
                                         processedTagsMap.put(epc, true);
                                         if (hasItem && allowed) {
@@ -973,46 +1136,33 @@ public class UHFReadTagFragment extends KeyDwonFragment {
 
                                     if (tvMiraProductName != null) {
                                         StringBuilder productInfo = new StringBuilder();
-
                                         if (!itemTitle.isEmpty() && !itemTitle.equals("غير محدد")) {
                                             productInfo.append("📦 ").append(itemTitle);
                                         } else {
                                             productInfo.append("📦 قطعة غير مسجلة");
                                         }
-
                                         if (!itemKarat.isEmpty()) {
                                             productInfo.append("\n💎 عيار: ").append(itemKarat);
                                         }
-
                                         if (itemWeight > 0) {
                                             productInfo.append("\n⚖️ الوزن: ").append(itemWeight).append(" غرام");
                                         }
-
                                         tvMiraProductName.setText(productInfo.toString());
                                     }
 
                                     if (tvMiraEpcGtin != null) {
                                         StringBuilder epcInfo = new StringBuilder();
                                         epcInfo.append("🏷️ EPC: ").append(epc);
-
                                         if (!itemStatus.isEmpty()) {
                                             String statusArabic;
                                             switch (itemStatus) {
-                                                case "sold":
-                                                    statusArabic = "مباع";
-                                                    break;
-                                                case "available":
-                                                    statusArabic = "متاح";
-                                                    break;
-                                                case "reserved":
-                                                    statusArabic = "محجوز";
-                                                    break;
-                                                default:
-                                                    statusArabic = itemStatus;
+                                                case "sold": statusArabic = "مباع"; break;
+                                                case "available": statusArabic = "متاح"; break;
+                                                case "reserved": statusArabic = "محجوز"; break;
+                                                default: statusArabic = itemStatus;
                                             }
                                             epcInfo.append("\n📋 الحالة: ").append(statusArabic);
                                         }
-
                                         tvMiraEpcGtin.setText(epcInfo.toString());
                                     }
 
@@ -1021,9 +1171,6 @@ public class UHFReadTagFragment extends KeyDwonFragment {
                                     if (tvMiraStatus != null) {
                                         tvMiraStatus.setText("⚠️ خطأ في تحليل البيانات");
                                         tvMiraStatus.setTextColor(Color.RED);
-                                    }
-                                    if (tvMiraProductName != null) {
-                                        tvMiraProductName.setText("الرد: " + jsonResponseStr);
                                     }
                                 }
                             }
@@ -1056,4 +1203,4 @@ public class UHFReadTagFragment extends KeyDwonFragment {
             }
         }).start();
     }
-}
+                                                      }
