@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,6 +56,7 @@ import java.util.List;
  * 
  * يجمع بين:
  * - إعدادات MIRA Bridge (API, Cloud Sync, Working Modes)
+ * - إعدادات المسح (RFID, كاميرا, هجين, يدوي)
  * - إعدادات قارئ RFID الأصلية (محفوظة بالكامل)
  * - حفظ محلي + سحابي في MIRA ID Database
  * - تطبيق فوري للإعدادات على جميع أجزاء التطبيق
@@ -70,11 +72,16 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private Button btnGetFre;
     private Spinner spFrequency;
 
+    // =============================================
     // 🟢 إعدادات المسح الجديدة
-private RadioGroup rgScanMode;
-private RadioButton rbRfidMode, rbCameraMode, rbHybridMode, rbManualMode;
-private CheckBox cbAutoScan, cbAutoOpenCamera, cbShowScanFrame, cbParseGS1, cbVibrateOnScan;
-    
+    // =============================================
+    private RadioGroup rgScanMode;
+    private RadioButton rbRfidMode, rbCameraMode, rbHybridMode, rbManualMode;
+    private CheckBox cbAutoScan, cbAutoOpenCamera, cbShowScanFrame, cbParseGS1, cbVibrateOnScan;
+
+    // =============================================
+    // 🟢 عناصر RFID المُحقونة بـ ViewInject
+    // =============================================
     @ViewInject(R.id.ll_freHop)
     private LinearLayout ll_freHop;
 
@@ -198,16 +205,16 @@ private CheckBox cbAutoScan, cbAutoOpenCamera, cbShowScanFrame, cbParseGS1, cbVi
         btnSaveAllSettings = root.findViewById(R.id.btnSaveAllSettings);
 
         // 🟢 ربط عناصر إعدادات المسح
-rgScanMode = root.findViewById(R.id.rgScanMode);
-rbRfidMode = root.findViewById(R.id.rbRfidMode);
-rbCameraMode = root.findViewById(R.id.rbCameraMode);
-rbHybridMode = root.findViewById(R.id.rbHybridMode);
-rbManualMode = root.findViewById(R.id.rbManualMode);
-cbAutoScan = root.findViewById(R.id.cbAutoScan);
-cbAutoOpenCamera = root.findViewById(R.id.cbAutoOpenCamera);
-cbShowScanFrame = root.findViewById(R.id.cbShowScanFrame);
-cbParseGS1 = root.findViewById(R.id.cbParseGS1);
-cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
+        rgScanMode = root.findViewById(R.id.rgScanMode);
+        rbRfidMode = root.findViewById(R.id.rbRfidMode);
+        rbCameraMode = root.findViewById(R.id.rbCameraMode);
+        rbHybridMode = root.findViewById(R.id.rbHybridMode);
+        rbManualMode = root.findViewById(R.id.rbManualMode);
+        cbAutoScan = root.findViewById(R.id.cbAutoScan);
+        cbAutoOpenCamera = root.findViewById(R.id.cbAutoOpenCamera);
+        cbShowScanFrame = root.findViewById(R.id.cbShowScanFrame);
+        cbParseGS1 = root.findViewById(R.id.cbParseGS1);
+        cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
 
         llMemoryBankParams.setVisibility(View.GONE);
         spMemoryBank.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -322,18 +329,19 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
     // 🟢 أنماط العمل (Working Modes)
     // =============================================
 
-    /**
-     * نمط MIRA ID Yemen - الأمثل للسوق اليمني
-     */
     private void applyMiraYemenMode() {
-        mContext.mReader.setFrequencyMode((byte) 0x01); // China 840-845 MHz
-        mContext.mReader.setPower(26);                   // طاقة محسّنة
-        mContext.mReader.setRFLink(0);                   // أسرع بروفايل
+        mContext.mReader.setFrequencyMode((byte) 0x01);
+        mContext.mReader.setPower(26);
+        mContext.mReader.setRFLink(0);
         
         cbSoundOnScan.setChecked(true);
         cbShowMiraCard.setChecked(true);
         cbAutoQueryMira.setChecked(true);
         cbRadarSimulation.setChecked(false);
+        if (rbRfidMode != null) rbRfidMode.setChecked(true);
+        if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(true);
+        if (cbParseGS1 != null) cbParseGS1.setChecked(true);
+        if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(true);
         
         settingsManager.saveSetting("working_mode", "mira_yemen");
         saveAllSettings();
@@ -341,17 +349,15 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         Toast.makeText(mContext, "🇾🇪 تم تطبيق نمط MIRA ID Yemen", Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * نمط MIRA ID Standard - العالمي
-     */
     private void applyMiraStandardMode() {
-        mContext.mReader.setFrequencyMode((byte) 0x08); // US Standard
+        mContext.mReader.setFrequencyMode((byte) 0x08);
         mContext.mReader.setPower(22);
         
         cbSoundOnScan.setChecked(true);
         cbShowMiraCard.setChecked(true);
         cbAutoQueryMira.setChecked(true);
         cbRadarSimulation.setChecked(true);
+        if (rbHybridMode != null) rbHybridMode.setChecked(true);
         
         settingsManager.saveSetting("working_mode", "mira_standard");
         saveAllSettings();
@@ -359,14 +365,13 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         Toast.makeText(mContext, "🌍 تم تطبيق النمط العالمي", Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * نمط RFID فقط
-     */
     private void applyRfidOnlyMode() {
         cbSoundOnScan.setChecked(true);
         cbShowMiraCard.setChecked(false);
         cbAutoQueryMira.setChecked(false);
         cbRadarSimulation.setChecked(false);
+        if (rbRfidMode != null) rbRfidMode.setChecked(true);
+        if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(false);
         
         settingsManager.saveSetting("working_mode", "rfid_only");
         saveAllSettings();
@@ -374,12 +379,10 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         Toast.makeText(mContext, "📡 نمط RFID فقط", Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * نمط المطور
-     */
     private void applyDevMode() {
         cbRadarSimulation.setChecked(true);
         cbAutoQueryMira.setChecked(false);
+        if (rbHybridMode != null) rbHybridMode.setChecked(true);
         
         settingsManager.saveSetting("working_mode", "dev");
         saveAllSettings();
@@ -388,12 +391,38 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
     }
 
     // =============================================
+    // 🟢 دوال إعدادات المسح
+    // =============================================
+
+    private String getSelectedScanMode() {
+        if (rbCameraMode != null && rbCameraMode.isChecked()) return "camera";
+        if (rbHybridMode != null && rbHybridMode.isChecked()) return "hybrid";
+        if (rbManualMode != null && rbManualMode.isChecked()) return "manual";
+        return "rfid";
+    }
+
+    private void setSelectedScanMode(String mode) {
+        if (mode == null) mode = "rfid";
+        switch (mode) {
+            case "camera":
+                if (rbCameraMode != null) rbCameraMode.setChecked(true);
+                break;
+            case "hybrid":
+                if (rbHybridMode != null) rbHybridMode.setChecked(true);
+                break;
+            case "manual":
+                if (rbManualMode != null) rbManualMode.setChecked(true);
+                break;
+            default:
+                if (rbRfidMode != null) rbRfidMode.setChecked(true);
+                break;
+        }
+    }
+
+    // =============================================
     // 🟢 دوال MIRA Bridge
     // =============================================
 
-    /**
-     * اختبار الاتصال بـ MIRA Server
-     */
     private void testMiraConnection() {
         tvMiraConnectionStatus.setText("🟡 جاري الاختبار...");
         tvMiraConnectionStatus.setTextColor(Color.parseColor("#FF9800"));
@@ -471,9 +500,6 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         }).start();
     }
 
-    /**
-     * حفظ جميع الإعدادات (محلي + سحابي)
-     */
     private void saveAllSettings() {
         String apiUrl = spMiraApiUrl.getSelectedItem().toString();
         String apiKey = etMiraApiKey.getText().toString().trim();
@@ -483,7 +509,7 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         boolean radarSimulation = cbRadarSimulation.isChecked();
         boolean autoQueryMira = cbAutoQueryMira.isChecked();
 
-        // 🟢 حفظ محلي في SharedPreferences
+        // حفظ محلي
         SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("mira_api_url", apiUrl);
@@ -493,37 +519,33 @@ cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
         editor.putBoolean("show_mira_card", showMiraCard);
         editor.putBoolean("radar_simulation", radarSimulation);
         editor.putBoolean("auto_query_mira", autoQueryMira);
-        // 🟢 حفظ إعدادات المسح
-editor.putString("scan_mode", getSelectedScanMode());
-editor.putBoolean("auto_scan", cbAutoScan.isChecked());
-editor.putBoolean("auto_open_camera", cbAutoOpenCamera.isChecked());
-editor.putBoolean("show_scan_frame", cbShowScanFrame.isChecked());
-editor.putBoolean("parse_gs1", cbParseGS1.isChecked());
-editor.putBoolean("vibrate_on_scan", cbVibrateOnScan.isChecked());
+        editor.putString("scan_mode", getSelectedScanMode());
+        editor.putBoolean("auto_scan", cbAutoScan != null && cbAutoScan.isChecked());
+        editor.putBoolean("auto_open_camera", cbAutoOpenCamera != null && cbAutoOpenCamera.isChecked());
+        editor.putBoolean("show_scan_frame", cbShowScanFrame != null && cbShowScanFrame.isChecked());
+        editor.putBoolean("parse_gs1", cbParseGS1 != null && cbParseGS1.isChecked());
+        editor.putBoolean("vibrate_on_scan", cbVibrateOnScan != null && cbVibrateOnScan.isChecked());
         editor.apply();
 
-        // 🟢 إشعار مدير الإعدادات بالتغيير
+        // إشعار مدير الإعدادات
         settingsManager.saveSetting("sound_on_scan", soundOnScan);
         settingsManager.saveSetting("show_mira_card", showMiraCard);
         settingsManager.saveSetting("radar_simulation", radarSimulation);
         settingsManager.saveSetting("auto_query_mira", autoQueryMira);
         settingsManager.saveSetting("scan_mode", getSelectedScanMode());
-settingsManager.saveSetting("auto_scan", cbAutoScan.isChecked());
-settingsManager.saveSetting("auto_open_camera", cbAutoOpenCamera.isChecked());
-settingsManager.saveSetting("show_scan_frame", cbShowScanFrame.isChecked());
-settingsManager.saveSetting("parse_gs1", cbParseGS1.isChecked());
-settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
+        if (cbAutoScan != null) settingsManager.saveSetting("auto_scan", cbAutoScan.isChecked());
+        if (cbAutoOpenCamera != null) settingsManager.saveSetting("auto_open_camera", cbAutoOpenCamera.isChecked());
+        if (cbShowScanFrame != null) settingsManager.saveSetting("show_scan_frame", cbShowScanFrame.isChecked());
+        if (cbParseGS1 != null) settingsManager.saveSetting("parse_gs1", cbParseGS1.isChecked());
+        if (cbVibrateOnScan != null) settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
 
-        // 🟢 حفظ سحابي في MIRA ID
+        // حفظ سحابي
         saveSettingsToCloud();
 
         mContext.showToast("✅ تم حفظ جميع الإعدادات");
         Log.d(TAG, "MIRA Settings Saved: url=" + apiUrl + ", gate=" + gateId);
     }
 
-    /**
-     * حفظ الإعدادات في MIRA ID Cloud
-     */
     private void saveSettingsToCloud() {
         new Thread(() -> {
             try {
@@ -551,6 +573,12 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
                 settings.put("show_mira_card", cbShowMiraCard.isChecked());
                 settings.put("radar_simulation", cbRadarSimulation.isChecked());
                 settings.put("auto_query_mira", cbAutoQueryMira.isChecked());
+                settings.put("scan_mode", getSelectedScanMode());
+                settings.put("auto_scan", cbAutoScan != null && cbAutoScan.isChecked());
+                settings.put("auto_open_camera", cbAutoOpenCamera != null && cbAutoOpenCamera.isChecked());
+                settings.put("show_scan_frame", cbShowScanFrame != null && cbShowScanFrame.isChecked());
+                settings.put("parse_gs1", cbParseGS1 != null && cbParseGS1.isChecked());
+                settings.put("vibrate_on_scan", cbVibrateOnScan != null && cbVibrateOnScan.isChecked());
                 settings.put("frequency_mode", spFrequency.getSelectedItemPosition());
                 settings.put("power", spPower.getSelectedItemPosition() + 1);
                 settings.put("link_profile", splinkParams.getSelectedItemPosition());
@@ -577,9 +605,6 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
         }).start();
     }
 
-    /**
-     * تحميل الإعدادات المحفوظة محلياً
-     */
     private void loadMiraSettings() {
         SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
         
@@ -604,6 +629,15 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
         if (cbRadarSimulation != null) cbRadarSimulation.setChecked(prefs.getBoolean("radar_simulation", true));
         if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(prefs.getBoolean("auto_query_mira", true));
 
+        // 🟢 تحميل إعدادات المسح
+        String scanMode = prefs.getString("scan_mode", "rfid");
+        setSelectedScanMode(scanMode);
+        if (cbAutoScan != null) cbAutoScan.setChecked(prefs.getBoolean("auto_scan", false));
+        if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(prefs.getBoolean("auto_open_camera", true));
+        if (cbShowScanFrame != null) cbShowScanFrame.setChecked(prefs.getBoolean("show_scan_frame", true));
+        if (cbParseGS1 != null) cbParseGS1.setChecked(prefs.getBoolean("parse_gs1", true));
+        if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(prefs.getBoolean("vibrate_on_scan", true));
+
         // 🟢 استعادة نمط العمل
         String workingMode = prefs.getString("working_mode", "mira_yemen");
         if (spWorkingMode != null) {
@@ -616,9 +650,6 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
         }
     }
 
-    /**
-     * جلب الإعدادات من MIRA ID Cloud
-     */
     private void loadSettingsFromCloud() {
         new Thread(() -> {
             try {
@@ -652,9 +683,6 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
         }).start();
     }
 
-    /**
-     * تطبيق الإعدادات السحابية على الواجهة
-     */
     private void applyCloudSettings(JSONObject settings) {
         try {
             if (settings.has("sound_on_scan")) 
@@ -666,11 +694,25 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
             if (settings.has("auto_query_mira")) 
                 cbAutoQueryMira.setChecked(settings.getBoolean("auto_query_mira"));
             
+            // 🟢 إعدادات المسح من السحابة
+            if (settings.has("scan_mode")) setSelectedScanMode(settings.getString("scan_mode"));
+            if (settings.has("auto_scan") && cbAutoScan != null) 
+                cbAutoScan.setChecked(settings.getBoolean("auto_scan"));
+            if (settings.has("auto_open_camera") && cbAutoOpenCamera != null) 
+                cbAutoOpenCamera.setChecked(settings.getBoolean("auto_open_camera"));
+            if (settings.has("show_scan_frame") && cbShowScanFrame != null) 
+                cbShowScanFrame.setChecked(settings.getBoolean("show_scan_frame"));
+            if (settings.has("parse_gs1") && cbParseGS1 != null) 
+                cbParseGS1.setChecked(settings.getBoolean("parse_gs1"));
+            if (settings.has("vibrate_on_scan") && cbVibrateOnScan != null) 
+                cbVibrateOnScan.setChecked(settings.getBoolean("vibrate_on_scan"));
+            
             // إشعار مدير الإعدادات
             settingsManager.saveSetting("sound_on_scan", cbSoundOnScan.isChecked());
             settingsManager.saveSetting("show_mira_card", cbShowMiraCard.isChecked());
             settingsManager.saveSetting("radar_simulation", cbRadarSimulation.isChecked());
             settingsManager.saveSetting("auto_query_mira", cbAutoQueryMira.isChecked());
+            settingsManager.saveSetting("scan_mode", getSelectedScanMode());
             
             Toast.makeText(mContext, "✅ تم تحميل الإعدادات من MIRA Cloud", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
@@ -1098,17 +1140,14 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
             .setTitle("⚠️ تأكيد إعادة الضبط")
             .setMessage("سيتم:\n• إعادة ضبط إعدادات القارئ\n• مسح إعدادات MIRA المحلية\n• استعادة الإعدادات الافتراضية\n\nهل أنت متأكد؟")
             .setPositiveButton("نعم، إعادة الضبط", (dialog, which) -> {
-                // إعادة ضبط القارئ
                 boolean rfidReset = mContext.mReader.factoryReset();
                 
-                // مسح إعدادات MIRA المحلية
                 SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
                 prefs.edit().clear().apply();
                 
                 if (rfidReset) {
                     mContext.showToast("✅ تمت إعادة الضبط بنجاح");
                     
-                    // إعادة تحميل إعدادات RFID
                     new Thread(() -> {
                         getFre(false);
                         getLinkParams(false);
@@ -1118,7 +1157,6 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
                         getFastInventory(false);
                     }).start();
                     
-                    // إعادة تعيين واجهة MIRA
                     etMiraApiKey.setText("mira_gate_test071234567890abcdefghijklmnop");
                     etMiraGateId.setText("handheld_c72");
                     cbSoundOnScan.setChecked(true);
@@ -1126,6 +1164,12 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
                     cbRadarSimulation.setChecked(true);
                     cbAutoQueryMira.setChecked(true);
                     if (spWorkingMode != null) spWorkingMode.setSelection(0);
+                    if (rbRfidMode != null) rbRfidMode.setChecked(true);
+                    if (cbAutoScan != null) cbAutoScan.setChecked(false);
+                    if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(true);
+                    if (cbShowScanFrame != null) cbShowScanFrame.setChecked(true);
+                    if (cbParseGS1 != null) cbParseGS1.setChecked(true);
+                    if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(true);
                     
                 } else {
                     mContext.showToast("❌ فشلت إعادة ضبط القارئ");
@@ -1134,4 +1178,4 @@ settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
             .setNegativeButton("إلغاء", null)
             .show();
     }
-}
+    }
