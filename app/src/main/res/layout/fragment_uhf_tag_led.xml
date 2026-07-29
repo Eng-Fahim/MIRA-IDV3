@@ -4,48 +4,131 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="#0D1B2A"
     tools:context=".fragment.UHFTagLitFragment">
 
+    <!-- ========== هيدر MIRA Spotlight ========== -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="48dp"
+        android:background="#1A237E"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:elevation="4dp">
 
-        <!-- 显示搜索完成的百分比 -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="💡 MIRA Spotlight"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/tvSpotlightCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 قطعة"
+            android:textColor="#C8E6C9"
+            android:textSize="11sp" />
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvTagList"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
+    <!-- ========== بحث سريع ========== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#1B2838">
+
+        <EditText
+            android:id="@+id/etSpotlightSearch"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:hint="🔍 ابحث بـ Serial أو GTIN"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#78909C"
+            android:background="@drawable/edittext_border"
+            android:paddingHorizontal="10dp"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnAddToSpotlight"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginStart="6dp"
+            android:text="➕ إضافة"
+            android:background="#1A73E8"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:paddingHorizontal="10dp" />
+    </LinearLayout>
+
+    <!-- ========== قائمة القطع ========== -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTagList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="4dp" />
+
+        <!-- رسالة فارغة -->
+        <TextView
+            android:id="@+id/tvEmptySpotlight"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="💡\nأضف قطعاً لإضاءتها\nعند المرور على البوابة"
+            android:textColor="#546E7A"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- ========== شريط التحكم ========== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#1B2838">
 
         <Button
             android:id="@+id/btnClear"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="@string/Clear" />
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="🗑️ مسح الكل"
+            android:background="#607D8B"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/btnInventory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/btnInventory" />
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="2"
+            android:layout_marginStart="4dp"
+            android:text="💡 ابدأ الإضاءة"
+            android:background="#FF9800"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="14sp" />
 
         <CheckBox
             android:id="@+id/cbTagLed"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="LED" />
-
-
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="LED"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:layout_marginStart="8dp"
+            android:checked="true" />
     </LinearLayout>
-
 </LinearLayout>
