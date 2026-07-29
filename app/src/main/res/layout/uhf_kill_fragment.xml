@@ -1,194 +1,248 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:scrollbars="vertical">
+    android:scrollbars="vertical"
+    android:background="#0D1B2A">
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="8dp">
 
-        <CheckBox
-            android:id="@+id/cb_filter"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#cccccc"
-            android:text="@string/uhf_title_filter"
-            android:textSize="19sp" />
-
+        <!-- ========== هيدر MIRA Deactivate ========== -->
         <LinearLayout
-            android:id="@+id/llFilter"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#B71C1C"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="☠️ MIRA Deactivate"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvDeactivateStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="جاهز"
+                android:textColor="#EF9A9A"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- ========== تحذير ========== -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/rectangle_bg"
+            android:background="#3E2723"
+            android:padding="10dp"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⚠️ تحذير: تعطيل RFID نهائي! لا يمكن التراجع."
+                android:textColor="#FFAB91"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ========== بحث MIRA ========== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <EditText
+                android:id="@+id/etDeactivateSearch"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:hint="🔍 ابحث بـ Serial أو GTIN"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#78909C"
+                android:background="@drawable/edittext_border"
+                android:paddingHorizontal="10dp" />
+
+            <Button
+                android:id="@+id/btnDeactivateSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:text="بحث"
+                android:background="#1A73E8"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:paddingHorizontal="14dp" />
+        </LinearLayout>
+
+        <!-- ========== بطاقة القطعة ========== -->
+        <LinearLayout
+            android:id="@+id/layoutDeactivateItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:padding="10dp"
+            android:background="#152030"
+            android:layout_marginBottom="8dp"
             android:visibility="gone">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/tvDeactivateItemTitle"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:text="📦 اسم القطعة"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tvPtr" />
+            <TextView
+                android:id="@+id/tvDeactivateItemDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🏷️ Serial | 💎 Karat | ⚖️ Weight"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp" />
 
-                <EditText
-                    android:id="@+id/etPtr_filter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:inputType="numberSigned"
-                    android:text="32" />
+            <TextView
+                android:id="@+id/tvDeactivateItemRfidStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📡 RFID: نشط"
+                android:textColor="#81C784"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="5dp"
-                    android:text="(bit)" />
+        <!-- ========== فلتر ========== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1B2838"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tvLen" />
-
-                <EditText
-                    android:id="@+id/etLen_filter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:inputType="numberSigned"
-                    android:text="96" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="(bit)" />
-            </LinearLayout>
+            <CheckBox
+                android:id="@+id/cb_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🎯 فلتر (استهداف تاق محدد)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
 
             <LinearLayout
+                android:id="@+id/llFilter"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="4dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tvData_Read" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/etPtr_filter"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:inputType="numberSigned"
+                        android:text="32"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/edittext_border"
+                        android:paddingHorizontal="6dp"
+                        android:hint="Ptr" />
+
+                    <EditText
+                        android:id="@+id/etLen_filter"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:inputType="numberSigned"
+                        android:text="96"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/edittext_border"
+                        android:paddingHorizontal="6dp"
+                        android:hint="Len"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
 
                 <EditText
                     android:id="@+id/etData_filter"
                     android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:hint="بيانات الفلتر (Hex)"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#78909C"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="8dp"
+                    android:layout_marginTop="4dp" />
+
+                <RadioGroup
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="hexadecimal data"
-                    android:inputType="textNoSuggestions"
-                    android:singleLine="true" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <RadioButton android:id="@+id/rbEPC_filter" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="EPC" android:textColor="#FFFFFF" android:checked="true" />
+                    <RadioButton android:id="@+id/rbTID_filter" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="TID" android:textColor="#FFFFFF" />
+                    <RadioButton android:id="@+id/rbUser_filter" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="USER" android:textColor="#FFFFFF" />
+                </RadioGroup>
             </LinearLayout>
-
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/rbEPC_filter"
-                    android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="true"
-                    android:gravity="center"
-                    android:text="EPC" />
-
-                <RadioButton
-                    android:id="@+id/rbTID_filter"
-                    android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="false"
-                    android:gravity="center"
-                    android:text="TID" />
-
-                <RadioButton
-                    android:id="@+id/rbUser_filter"
-                    android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="false"
-                    android:gravity="center"
-                    android:text="USER" />
-            </RadioGroup>
         </LinearLayout>
 
-        <!--<RelativeLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
-
-            <CheckBox
-                android:id="@+id/CkWithUii_Write"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckWithUii" />
-
-            <Button
-                android:id="@+id/BtUii_Write"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:text="@string/btUii"
-                android:textSize="@dimen/text_size_14"
-                android:visibility="gone" />
-        </RelativeLayout>
-
+        <!-- ========== كلمة المرور ========== -->
         <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvTagUii_Write" />
-
-            <EditText
-                android:id="@+id/EtTagUii_Write"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:hint="" />
-        </LinearLayout>-->
-
-        <LinearLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="4dp">
+            android:background="#1B2838"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/tvAccessPwd" />
+                android:text="🔑 كلمة مرور التعطيل (Kill Password):"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp" />
 
             <EditText
                 android:id="@+id/EtAccessPwd_Write"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/rfid_mgs_killpwdtip" />
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:hint="00000000 (8 خانات Hex)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#78909C"
+                android:background="@drawable/edittext_border"
+                android:paddingHorizontal="10dp"
+                android:inputType="textPassword" />
         </LinearLayout>
 
+        <!-- ========== زر التعطيل ========== -->
         <Button
             android:id="@+id/btnKill"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/uhf_msg_tab_kill"
-            android:background="@drawable/button_bg"
-            android:textColor="@color/white"
-            android:layout_marginLeft="4dp"
-            android:layout_marginRight="4dp"/>
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="☠️ تعطيل RFID نهائياً"
+            android:background="#B71C1C"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp" />
 
     </LinearLayout>
 </ScrollView>
