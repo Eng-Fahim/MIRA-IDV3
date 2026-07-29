@@ -38,6 +38,7 @@ import com.example.uhf.fragment.UHFUpgradeFragment;
 import com.example.uhf.tools.ExportExcelAsyncTask;
 import com.example.uhf.tools.UIHelper;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
+import com.example.uhf.fragment.MiraSecureGateFragment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
