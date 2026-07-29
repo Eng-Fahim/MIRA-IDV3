@@ -2,279 +2,376 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:scrollbars="vertical">
+    android:scrollbars="vertical"
+    android:background="#0D1B2A">
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="8dp">
 
-        <TextView
+        <!-- ========== هيدر MIRA Programmer ========== -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#AAAAAA"
-            android:padding="4dp"
-            android:text="@string/uhf_title_filter"
-            android:textSize="16sp" />
+            android:layout_height="48dp"
+            android:background="#1A237E"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:elevation="4dp"
+            android:layout_marginBottom="8dp">
 
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="💾 MIRA Programmer"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvProgrammerStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="جاهز"
+                android:textColor="#C8E6C9"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- ========== بحث عن قطعة ========== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/rectangle_bg"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <EditText
+                android:id="@+id/etProgrammerSearch"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:hint="🔍 ابحث بـ Serial أو GTIN"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#78909C"
+                android:background="@drawable/edittext_border"
+                android:paddingHorizontal="10dp"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnProgrammerSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:text="بحث"
+                android:background="#1A73E8"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:paddingHorizontal="14dp" />
+        </LinearLayout>
+
+        <!-- ========== بطاقة القطعة من MIRA ========== -->
+        <LinearLayout
+            android:id="@+id/layoutProgrammerItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="10dp"
+            android:background="#152030"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvProgrammerItemTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📦 اسم القطعة"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvProgrammerItemDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🏷️ Serial | 💎 Karat | ⚖️ Weight"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- ========== قسم الفلتر ========== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1B2838"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🎯 فلتر (تاق محدد)"
+                android:textColor="#90CAF9"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:padding="4dp" />
 
             <CheckBox
                 android:id="@+id/cb_filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/button_enable"
-                android:textColor="@drawable/check_text_color"
-                android:textSize="19sp" />
+                android:text="تفعيل"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/tvPtr" />
+                    android:text="Ptr:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp" />
 
                 <EditText
                     android:id="@+id/etPtr_filter"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
                     android:layout_weight="1"
                     android:inputType="numberSigned"
-                    android:text="32" />
+                    android:text="32"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="6dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="30dp"
-                    android:text="(bit)" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="长度:" />
+                    android:text="Len:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp"
+                    android:layout_marginStart="4dp" />
 
                 <EditText
                     android:id="@+id/etLen_filter"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
                     android:layout_weight="1"
                     android:inputType="numberSigned"
-                    android:text="0" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="(bit)" />
+                    android:text="0"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="6dp" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/tvData_Read" />
-
-                <EditText
-                    android:id="@+id/etData_filter"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:hint=""
-                    android:inputType="textNoSuggestions"
-                    android:singleLine="true" />
-            </LinearLayout>
+            <EditText
+                android:id="@+id/etData_filter"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:hint="بيانات الفلتر (Hex)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#78909C"
+                android:background="@drawable/edittext_border"
+                android:paddingHorizontal="8dp"
+                android:layout_marginTop="4dp" />
 
             <RadioGroup
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
 
                 <RadioButton
                     android:id="@+id/rbEPC_filter"
                     android:layout_width="0dp"
-                    android:layout_height="30dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="true"
-                    android:gravity="center"
                     android:text="EPC"
-                    android:textColor="@drawable/check_text_color" />
-
+                    android:textColor="#FFFFFF"
+                    android:checked="true" />
                 <RadioButton
                     android:id="@+id/rbTID_filter"
                     android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_marginLeft="10dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="false"
-                    android:gravity="center"
                     android:text="TID"
-                    android:textColor="@drawable/check_text_color" />
-
+                    android:textColor="#FFFFFF" />
                 <RadioButton
                     android:id="@+id/rbUser_filter"
                     android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_marginLeft="10dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/rb_bg"
-                    android:button="@null"
-                    android:checked="false"
-                    android:gravity="center"
                     android:text="USER"
-                    android:textColor="@drawable/check_text_color" />
-
+                    android:textColor="#FFFFFF" />
             </RadioGroup>
-
-
         </LinearLayout>
 
+        <!-- ========== قسم القراءة/الكتابة ========== -->
         <LinearLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="5dp">
+            android:background="#1B2838"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💾 بيانات التاق"
+                android:textColor="#90CAF9"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:padding="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:text="Bank:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp" />
+
+                <Spinner
+                    android:id="@+id/SpinnerBank"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:entries="@array/arrayBank"
+                    android:background="@drawable/edittext_border" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:text="Ptr:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/EtPtr"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:inputType="numberSigned"
+                    android:text="0"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="6dp" />
+
+                <TextView
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:text="Len:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp"
+                    android:layout_marginStart="4dp" />
+
+                <EditText
+                    android:id="@+id/EtLen"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:inputType="numberSigned"
+                    android:text="6"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="6dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content"
+                    android:text="Password:"
+                    android:textColor="#B0BEC5"
+                    android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/EtAccessPwd"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:hint="00000000"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#78909C"
+                    android:background="@drawable/edittext_border"
+                    android:paddingHorizontal="8dp" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/tvBank"
-                android:textSize="16sp" />
-
-            <Spinner
-                android:id="@+id/SpinnerBank"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:entries="@array/arrayBank" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:padding="5dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvPtr"
-                android:textSize="16sp" />
-
-            <EditText
-                android:id="@+id/EtPtr"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
-                android:inputType="numberSigned"
-                android:text="0"
-                android:textColor="@color/red1"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="30dp"
-                android:text="(word)" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvLen"
-                android:textSize="16sp" />
-
-            <EditText
-                android:id="@+id/EtLen"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
-                android:inputType="numberSigned"
-                android:text="4"
-                android:textColor="@color/red1"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="(word)" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:padding="5dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvAccessPwd"
-                android:textSize="16sp" />
-
-            <EditText
-                android:id="@+id/EtAccessPwd"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:hint="00000000" />
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:padding="5dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvData_Read"
-                android:textSize="16sp" />
+                android:text="Data:"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
 
             <EditText
                 android:id="@+id/EtData"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:hint=""
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:hint="البيانات المقروءة / المراد كتابتها"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#78909C"
+                android:background="@drawable/edittext_border"
+                android:padding="8dp"
+                android:gravity="top"
                 android:inputType="textMultiLine"
                 android:singleLine="false" />
         </LinearLayout>
 
+        <!-- ========== أزرار ========== -->
         <LinearLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/BtWrite"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/button_bg"
-                android:text="@string/btWrite"
-                android:textColor="@color/white" />
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/BtRead"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:background="@drawable/button_bg"
-                android:text="@string/btRead"
-                android:textColor="@color/white" />
+                android:layout_marginEnd="4dp"
+                android:background="#1A73E8"
+                android:text="📖 قراءة"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="15sp" />
 
+            <Button
+                android:id="@+id/BtWrite"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:background="#FF9800"
+                android:text="✍️ كتابة"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="15sp" />
         </LinearLayout>
     </LinearLayout>
-
 </ScrollView>
