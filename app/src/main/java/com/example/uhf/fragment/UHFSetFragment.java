@@ -69,6 +69,11 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private Button btnSetFre;
     private Button btnGetFre;
     private Spinner spFrequency;
+
+    // 🟢 إعدادات المسح الجديدة
+private RadioGroup rgScanMode;
+private RadioButton rbRfidMode, rbCameraMode, rbHybridMode, rbManualMode;
+private CheckBox cbAutoScan, cbAutoOpenCamera, cbShowScanFrame, cbParseGS1, cbVibrateOnScan;
     
     @ViewInject(R.id.ll_freHop)
     private LinearLayout ll_freHop;
@@ -191,6 +196,18 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         cbRadarSimulation = root.findViewById(R.id.cbRadarSimulation);
         cbAutoQueryMira = root.findViewById(R.id.cbAutoQueryMira);
         btnSaveAllSettings = root.findViewById(R.id.btnSaveAllSettings);
+
+        // 🟢 ربط عناصر إعدادات المسح
+rgScanMode = root.findViewById(R.id.rgScanMode);
+rbRfidMode = root.findViewById(R.id.rbRfidMode);
+rbCameraMode = root.findViewById(R.id.rbCameraMode);
+rbHybridMode = root.findViewById(R.id.rbHybridMode);
+rbManualMode = root.findViewById(R.id.rbManualMode);
+cbAutoScan = root.findViewById(R.id.cbAutoScan);
+cbAutoOpenCamera = root.findViewById(R.id.cbAutoOpenCamera);
+cbShowScanFrame = root.findViewById(R.id.cbShowScanFrame);
+cbParseGS1 = root.findViewById(R.id.cbParseGS1);
+cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
 
         llMemoryBankParams.setVisibility(View.GONE);
         spMemoryBank.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -476,6 +493,13 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         editor.putBoolean("show_mira_card", showMiraCard);
         editor.putBoolean("radar_simulation", radarSimulation);
         editor.putBoolean("auto_query_mira", autoQueryMira);
+        // 🟢 حفظ إعدادات المسح
+editor.putString("scan_mode", getSelectedScanMode());
+editor.putBoolean("auto_scan", cbAutoScan.isChecked());
+editor.putBoolean("auto_open_camera", cbAutoOpenCamera.isChecked());
+editor.putBoolean("show_scan_frame", cbShowScanFrame.isChecked());
+editor.putBoolean("parse_gs1", cbParseGS1.isChecked());
+editor.putBoolean("vibrate_on_scan", cbVibrateOnScan.isChecked());
         editor.apply();
 
         // 🟢 إشعار مدير الإعدادات بالتغيير
@@ -483,6 +507,12 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         settingsManager.saveSetting("show_mira_card", showMiraCard);
         settingsManager.saveSetting("radar_simulation", radarSimulation);
         settingsManager.saveSetting("auto_query_mira", autoQueryMira);
+        settingsManager.saveSetting("scan_mode", getSelectedScanMode());
+settingsManager.saveSetting("auto_scan", cbAutoScan.isChecked());
+settingsManager.saveSetting("auto_open_camera", cbAutoOpenCamera.isChecked());
+settingsManager.saveSetting("show_scan_frame", cbShowScanFrame.isChecked());
+settingsManager.saveSetting("parse_gs1", cbParseGS1.isChecked());
+settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
 
         // 🟢 حفظ سحابي في MIRA ID
         saveSettingsToCloud();
