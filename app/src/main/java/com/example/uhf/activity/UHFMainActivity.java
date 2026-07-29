@@ -138,7 +138,12 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.action_rfid_upgrader)).setIndicator(getString(R.string.action_rfid_upgrader)),
                 UHFUpgradeFragment.class, null);
     }
-
+// في initViewPageData()، أضف بعد تبويب RADAR:
+mTabHost.addTab(
+    mTabHost.newTabSpec("MIRA Secure Gate™")
+        .setIndicator("🚪 MIRA Gate"),
+    MiraSecureGateFragment.class, null
+);
     @Override
     protected void onDestroy() {
         Log.e("zz_pp", "onDestroy()");
