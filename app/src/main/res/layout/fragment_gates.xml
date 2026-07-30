@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E27"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="🚪" android:textSize="72sp" android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvGateStatus"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="🔒 البوابة غير مفعلة" android:textColor="#FFFFFF"
+        android:textSize="20sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+
+    <View
+        android:id="@+id/statusIndicator"
+        android:layout_width="60dp" android:layout_height="60dp"
+        android:background="#F44336" android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:id="@+id/tvLastEvent"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="في انتظار التفعيل" android:textColor="#B0BEC5"
+        android:textSize="14sp" android:gravity="center" android:layout_marginBottom="20dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginBottom="20dp">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/tvPassCount" android:text="0" android:textColor="#4CAF50" android:textSize="28sp" android:textStyle="bold"/>
+            <TextView android:text="✅ مصرح" android:textColor="#81C784" android:textSize="11sp"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/tvDenyCount" android:text="0" android:textColor="#F44336" android:textSize="28sp" android:textStyle="bold"/>
+            <TextView android:text="🚨 ممنوع" android:textColor="#EF9A9A" android:textSize="11sp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnArmGate"
+        android:layout_width="match_parent" android:layout_height="56dp"
+        android:text="🛡️ تفعيل البوابة" android:background="#4CAF50"
+        android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="16sp"
+        android:layout_marginBottom="10dp"/>
+
+    <Button
+        android:id="@+id/btnDisarmGate"
+        android:layout_width="match_parent" android:layout_height="56dp"
+        android:text="🔒 إيقاف البوابة" android:background="#F44336"
+        android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="16sp"/>
+
+</LinearLayout>
