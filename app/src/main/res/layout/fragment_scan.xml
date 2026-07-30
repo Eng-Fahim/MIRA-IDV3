@@ -31,3 +31,31 @@
         <Button
             android:id="@+id/btnScan"
             android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+            android:text="🔍 فحص" android:background="#1A73E8" android:textColor="#FFFFFF"
+            android:textStyle="bold" android:layout_marginEnd="6dp"/>
+
+        <Button
+            android:id="@+id/btnCamera"
+            android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+            android:text="📷 كاميرا" android:background="#4CAF50" android:textColor="#FFFFFF"
+            android:textStyle="bold" android:layout_marginStart="6dp"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="جاهز للمسح" android:textColor="#78909C"
+        android:textSize="14sp" android:gravity="center" android:layout_marginBottom="12dp"/>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp" app:cardBackgroundColor="#1A1E3A">
+
+        <TextView
+            android:id="@+id/tvResult"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="" android:textColor="#FFFFFF"
+            android:textSize="15sp" android:padding="16dp" android:gravity="center"/>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>
