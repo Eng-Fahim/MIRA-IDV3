@@ -606,77 +606,49 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     }
 
     private void loadMiraSettings() {
-    SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
-    
-    String apiUrl = prefs.getString("mira_api_url", "");
-    String apiKey = prefs.getString("mira_api_key", "mira_gate_test071234567890abcdefghijklmnop");
-    String gateId = prefs.getString("mira_gate_id", "handheld_c72");
-    
-    if (!apiUrl.isEmpty() && spMiraApiUrl != null) {
-        for (int i = 0; i < spMiraApiUrl.getCount(); i++) {
-            if (spMiraApiUrl.getItemAtPosition(i).toString().equals(apiUrl)) {
-                spMiraApiUrl.setSelection(i);
-                break;
+        SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
+        
+        String apiUrl = prefs.getString("mira_api_url", "");
+        String apiKey = prefs.getString("mira_api_key", "mira_gate_test071234567890abcdefghijklmnop");
+        String gateId = prefs.getString("mira_gate_id", "handheld_c72");
+        
+        if (!apiUrl.isEmpty() && spMiraApiUrl != null) {
+            for (int i = 0; i < spMiraApiUrl.getCount(); i++) {
+                if (spMiraApiUrl.getItemAtPosition(i).toString().equals(apiUrl)) {
+                    spMiraApiUrl.setSelection(i);
+                    break;
+                }
+            }
+        }
+        
+        if (etMiraApiKey != null) etMiraApiKey.setText(apiKey);
+        if (etMiraGateId != null) etMiraGateId.setText(gateId);
+        
+        if (cbSoundOnScan != null) cbSoundOnScan.setChecked(prefs.getBoolean("sound_on_scan", true));
+        if (cbShowMiraCard != null) cbShowMiraCard.setChecked(prefs.getBoolean("show_mira_card", true));
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(prefs.getBoolean("radar_simulation", true));
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(prefs.getBoolean("auto_query_mira", true));
+
+        // 🟢 تحميل إعدادات المسح
+        String scanMode = prefs.getString("scan_mode", "rfid");
+        setSelectedScanMode(scanMode);
+        if (cbAutoScan != null) cbAutoScan.setChecked(prefs.getBoolean("auto_scan", false));
+        if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(prefs.getBoolean("auto_open_camera", true));
+        if (cbShowScanFrame != null) cbShowScanFrame.setChecked(prefs.getBoolean("show_scan_frame", true));
+        if (cbParseGS1 != null) cbParseGS1.setChecked(prefs.getBoolean("parse_gs1", true));
+        if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(prefs.getBoolean("vibrate_on_scan", true));
+
+        // 🟢 استعادة نمط العمل
+        String workingMode = prefs.getString("working_mode", "mira_yemen");
+        if (spWorkingMode != null) {
+            switch (workingMode) {
+                case "mira_yemen": spWorkingMode.setSelection(0); break;
+                case "mira_standard": spWorkingMode.setSelection(1); break;
+                case "rfid_only": spWorkingMode.setSelection(2); break;
+                case "dev": spWorkingMode.setSelection(3); break;
             }
         }
     }
-    
-    if (etMiraApiKey != null) etMiraApiKey.setText(apiKey);
-    if (etMiraGateId != null) etMiraGateId.setText(gateId);
-    
-    // 🟢 استخدام getString بدل getBoolean لتجنب مشكلة القيم الافتراضية
-    if (cbSoundOnScan != null) {
-        String val = prefs.getString("sound_on_scan", "true");
-        cbSoundOnScan.setChecked("true".equals(val));
-    }
-    if (cbShowMiraCard != null) {
-        String val = prefs.getString("show_mira_card", "true");
-        cbShowMiraCard.setChecked("true".equals(val));
-    }
-    if (cbRadarSimulation != null) {
-        String val = prefs.getString("radar_simulation", "true");
-        cbRadarSimulation.setChecked("true".equals(val));
-    }
-    if (cbAutoQueryMira != null) {
-        String val = prefs.getString("auto_query_mira", "true");
-        cbAutoQueryMira.setChecked("true".equals(val));
-    }
-
-    // 🟢 تحميل إعدادات المسح
-    String scanMode = prefs.getString("scan_mode", "rfid");
-    setSelectedScanMode(scanMode);
-    if (cbAutoScan != null) {
-        String val = prefs.getString("auto_scan", "false");
-        cbAutoScan.setChecked("true".equals(val));
-    }
-    if (cbAutoOpenCamera != null) {
-        String val = prefs.getString("auto_open_camera", "true");
-        cbAutoOpenCamera.setChecked("true".equals(val));
-    }
-    if (cbShowScanFrame != null) {
-        String val = prefs.getString("show_scan_frame", "true");
-        cbShowScanFrame.setChecked("true".equals(val));
-    }
-    if (cbParseGS1 != null) {
-        String val = prefs.getString("parse_gs1", "true");
-        cbParseGS1.setChecked("true".equals(val));
-    }
-    if (cbVibrateOnScan != null) {
-        String val = prefs.getString("vibrate_on_scan", "true");
-        cbVibrateOnScan.setChecked("true".equals(val));
-    }
-
-    // 🟢 استعادة نمط العمل
-    String workingMode = prefs.getString("working_mode", "mira_yemen");
-    if (spWorkingMode != null) {
-        switch (workingMode) {
-            case "mira_yemen": spWorkingMode.setSelection(0); break;
-            case "mira_standard": spWorkingMode.setSelection(1); break;
-            case "rfid_only": spWorkingMode.setSelection(2); break;
-            case "dev": spWorkingMode.setSelection(3); break;
-        }
-    }
-}
 
     private void loadSettingsFromCloud() {
         new Thread(() -> {
@@ -1206,4 +1178,4 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             .setNegativeButton("إلغاء", null)
             .show();
     }
-            }
+             }
