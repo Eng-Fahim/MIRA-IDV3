@@ -1206,4 +1206,4 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
             .setNegativeButton("إلغاء", null)
             .show();
     }
-                    }
+            }
