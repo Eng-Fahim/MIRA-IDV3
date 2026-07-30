@@ -12,6 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-
-rootProject.name = "uhf-uart-demo"
+rootProject.name = "MIRA-IDV3"
 include ':app'
