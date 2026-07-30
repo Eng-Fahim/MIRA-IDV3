@@ -299,7 +299,10 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
         }
 
         // تهيئة Spinner الطاقة
-        String ver = mContext.mReader.getVersion();
+        String ver = "";
+if (mContext != null && mContext.mReader != null) {
+    ver = mContext.mReader.getVersion();
+}
         arrPow = R.array.arrayPower;
         ArrayAdapter powerAdapter = ArrayAdapter.createFromResource(mContext, arrPow, android.R.layout.simple_spinner_item);
         powerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
