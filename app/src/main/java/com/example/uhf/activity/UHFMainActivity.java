@@ -46,7 +46,7 @@ import java.util.HashMap;
 public class UHFMainActivity extends BaseTabFragmentActivity {
 
     private final static String TAG = "MainActivity";
-    private FragmentTabHost mTabHost;
+    public FragmentTabHost mTabHost;
     private FragmentManager fm;
     public int selectIndex = -1;
     public ArrayList<UHFTAGInfo> tagList = new ArrayList<UHFTAGInfo>();
