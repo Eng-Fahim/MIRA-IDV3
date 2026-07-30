@@ -1,695 +1,815 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F8FAFC">
 
-    <!-- ========== الشريط العلوي لتحديد نمط القراءة والفلترة ========== -->
-    <LinearLayout
+    <!-- Container الرئيسي محاط بـ NestedScrollView لتفادي مشاكل الأجهزة صغيرة الشاشة -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="10dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp"
-        android:gravity="center_vertical">
-
-        <RadioGroup
-            android:id="@+id/RgInventory"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/RbInventorySingle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="🔍 فحص فردي"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="@drawable/check_text_color2" />
-
-            <RadioButton
-                android:id="@+id/RbInventoryLoop"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:checked="true"
-                android:text="📦 جرد تجميعي"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="@drawable/check_text_color2" />
-        </RadioGroup>
-
-        <CheckBox
-            android:id="@+id/cbFilter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚙️ الفلترة"
-            android:textSize="12sp"
-            android:textColor="#475569" />
-    </LinearLayout>
-
-    <!-- ========== أزرار التحكم والعمليات السريعة ========== -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="#FFFFFF">
-
-        <CheckBox
-            android:id="@+id/cbPhase"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Phase"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/BtInventory"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="2"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/button_bg"
-            android:text="بدء القراءة (RFID)"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/BtClear"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:background="#64748B"
-            android:text="مسح"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp" />
-    </LinearLayout>
-
-    <!-- ========== قسم الفلترة المتقدمة (مخفي افتراضياً) ========== -->
-    <LinearLayout
-        android:id="@+id/layout_filter"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rectangle_bg"
-        android:orientation="vertical"
-        android:padding="8dp"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvPtr" />
-
-            <EditText
-                android:id="@+id/etPtr"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned"
-                android:text="32" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="(bit)  " />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="الطول: " />
-
-            <EditText
-                android:id="@+id/etLen"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned"
-                android:text="0" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="(bit)" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tvData_Read" />
-
-            <EditText
-                android:id="@+id/etData"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textNoSuggestions"
-                android:singleLine="true" />
-        </LinearLayout>
-
-        <RadioGroup
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/rbEPC"
-                android:layout_width="0dp"
-                android:layout_height="30dp"
-                android:layout_weight="1"
-                android:background="@drawable/rb_bg"
-                android:button="@null"
-                android:checked="true"
-                android:gravity="center"
-                android:text="EPC"
-                android:textColor="@drawable/check_text_color" />
-
-            <RadioButton
-                android:id="@+id/rbTID"
-                android:layout_width="0dp"
-                android:layout_height="30dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/rb_bg"
-                android:button="@null"
-                android:gravity="center"
-                android:text="TID"
-                android:textColor="@drawable/check_text_color" />
-
-            <RadioButton
-                android:id="@+id/rbUser"
-                android:layout_width="0dp"
-                android:layout_height="30dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/rb_bg"
-                android:button="@null"
-                android:gravity="center"
-                android:text="USER"
-                android:textColor="@drawable/check_text_color" />
-        </RadioGroup>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:paddingBottom="90dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:paddingTop="8dp">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <Button
-                android:id="@+id/btSet"
-                android:layout_width="120dp"
-                android:layout_height="36dp"
-                android:background="@drawable/button_bg"
-                android:textColor="#FFFFFF"
-                android:text="تطبيق الفلتر" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="8dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- قسم البحث اليدوي -->
-            <LinearLayout
+            <!-- Header & Mode Selection Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <EditText
-                    android:id="@+id/etGtinInput"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:hint="🔍 أدخل GTIN-13 أو EPC"
-                    android:inputType="text"
-                    android:paddingHorizontal="12dp"
-                    android:textSize="13sp"
-                    android:background="@drawable/edittext_border"
-                    android:layout_marginEnd="6dp" />
-
-                <Button
-                    android:id="@+id/btnCheckGtin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:background="#1A73E8"
-                    android:text="فحص"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="13sp"
-                    android:paddingHorizontal="16dp" />
-            </LinearLayout>
-
-            <!-- 📊 جدول الجرد التجميعي الموحد (Unified Batch Summary Table) -->
-            <TableLayout
-                android:id="@+id/tableBatchSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#FFFFFF"
-                android:elevation="3dp"
-                android:padding="8dp"
-                android:stretchColumns="*"
-                android:layout_marginBottom="8dp">
-
-                <!-- رأس الجدول -->
-                <TableRow
-                    android:background="#1A237E"
-                    android:padding="8dp">
-                    <TextView
-                        android:text="حالة MIRA"
-                        android:textColor="#FFFFFF"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:text="القطع المقروءة"
-                        android:textColor="#FFFFFF"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:text="النسبة"
-                        android:textColor="#FFFFFF"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:gravity="center" />
-                </TableRow>
-
-                <!-- صف الإجمالي -->
-                <TableRow
-                    android:background="#F1F5F9"
-                    android:padding="8dp">
-                    <TextView
-                        android:text="📦 إجمالي القطع"
-                        android:textColor="#0F172A"
-                        android:textStyle="bold"
-                        android:textSize="12sp" />
-                    <TextView
-                        android:id="@+id/tvBatchTotal"
-                        android:text="0"
-                        android:textColor="#0F172A"
-                        android:textStyle="bold"
-                        android:textSize="13sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:text="100%"
-                        android:textColor="#0F172A"
-                        android:textSize="11sp"
-                        android:gravity="center" />
-                </TableRow>
-
-                <!-- صف المصرح -->
-                <TableRow
-                    android:background="#DCFCE7"
-                    android:padding="8dp">
-                    <TextView
-                        android:text="✅ مصرح (Authorized)"
-                        android:textColor="#166534"
-                        android:textStyle="bold"
-                        android:textSize="12sp" />
-                    <TextView
-                        android:id="@+id/tvBatchAllowed"
-                        android:text="0"
-                        android:textColor="#166534"
-                        android:textStyle="bold"
-                        android:textSize="13sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:id="@+id/tvBatchAllowedPct"
-                        android:text="0%"
-                        android:textColor="#15803D"
-                        android:textSize="11sp"
-                        android:gravity="center" />
-                </TableRow>
-
-                <!-- صف الممنوع -->
-                <TableRow
-                    android:background="#FEE2E2"
-                    android:padding="8dp">
-                    <TextView
-                        android:text="🚨 ممنوع (Blocked)"
-                        android:textColor="#991B1B"
-                        android:textStyle="bold"
-                        android:textSize="12sp" />
-                    <TextView
-                        android:id="@+id/tvBatchBlocked"
-                        android:text="0"
-                        android:textColor="#991B1B"
-                        android:textStyle="bold"
-                        android:textSize="13sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:id="@+id/tvBatchBlockedPct"
-                        android:text="0%"
-                        android:textColor="#B91C1C"
-                        android:textSize="11sp"
-                        android:gravity="center" />
-                </TableRow>
-
-                <!-- صف المجهول -->
-                <TableRow
-                    android:background="#FEF3C7"
-                    android:padding="8dp">
-                    <TextView
-                        android:text="⚠️ مجهول (Unknown)"
-                        android:textColor="#92400E"
-                        android:textStyle="bold"
-                        android:textSize="12sp" />
-                    <TextView
-                        android:id="@+id/tvBatchUnknown"
-                        android:text="0"
-                        android:textColor="#92400E"
-                        android:textStyle="bold"
-                        android:textSize="13sp"
-                        android:gravity="center" />
-                    <TextView
-                        android:id="@+id/tvBatchUnknownPct"
-                        android:text="0%"
-                        android:textColor="#B45309"
-                        android:textSize="11sp"
-                        android:gravity="center" />
-                </TableRow>
-            </TableLayout>
-
-            <!-- 🟢 بطاقة نتيجة MIRA ID الفردية -->
-            <LinearLayout
-                android:id="@+id/cardMiraResult"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/mira_card_background"
-                android:padding="0dp"
-                android:visibility="gone"
-                android:elevation="4dp">
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#E2E8F0"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#1A237E"
-                    android:padding="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="🏷️ MIRA Digital Trust™"
-                        android:textColor="#FFFFFF"
-                        android:textStyle="bold"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvMiraStatusBadge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/badge_background"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="3dp"
-                        android:text="جاري..."
-                        android:textColor="#FFFFFF"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layoutMiraLoading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="16dp"
-                    android:visibility="gone">
-
-                    <ProgressBar
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:indeterminateTint="#1A73E8" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="جاري الاستعلام من MIRA..."
-                        android:textColor="#666666"
-                        android:textSize="12sp"
-                        android:layout_marginTop="6dp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layoutMiraDetails"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:visibility="visible">
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="160dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="#F5F5F5">
-
-                        <ImageView
-                            android:id="@+id/ivMiraItemImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="fitCenter"
-                            android:contentDescription="صورة القطعة"
-                            android:visibility="gone"
-                            android:padding="4dp" />
-
-                        <ProgressBar
-                            android:id="@+id/progressImageLoading"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:layout_gravity="center"
-                            android:visibility="gone"
-                            android:indeterminateTint="#1A73E8" />
-
-                        <TextView
-                            android:id="@+id/tvNoImagePlaceholder"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:text="📸\nلا توجد صورة"
-                            android:textColor="#999999"
-                            android:textSize="12sp"
-                            android:visibility="gone" />
-                    </FrameLayout>
+                    android:padding="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="6dp">
+                        android:orientation="horizontal">
 
-                        <View
-                            android:id="@+id/statusIndicator"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/circle_indicator"
-                            android:layout_marginEnd="6dp" />
+                        <RadioGroup
+                            android:id="@+id/RgInventory"
+                            android:layout_width="0dp"
+                            android:layout_height=" wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/RbInventorySingle"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/selector_chip_bg"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:text="فحص فردي"
+                                android:textColor="#334155"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <RadioButton
+                                android:id="@+id/RbInventoryLoop"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/selector_chip_bg"
+                                android:button="@null"
+                                android:checked="true"
+                                android:gravity="center"
+                                android:text="جرد تجميعي"
+                                android:textColor="#334155"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </RadioGroup>
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/cbFilter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="تصفية"
+                            android:textColor="#475569"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- قسم الفلترة المتقدمة (Filter Panel) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/layout_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#F1F5F9"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
                         <TextView
-                            android:id="@+id/tvMiraStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="PTR:"
+                            android:textColor="#475569"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/etPtr"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_input_field"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:text="32"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="8dp"
+                            android:text="الطول:"
+                            android:textColor="#475569"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/etLen"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_input_field"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:text="0"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <EditText
+                        android:id="@+id/etData"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input_field"
+                        android:hint="بيانات القناع (Hex Mask Data)"
+                        android:paddingHorizontal="10dp"
+                        android:singleLine="true"
+                        android:textSize="12sp" />
+
+                    <RadioGroup
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rbEPC"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_chip_bg"
+                            android:button="@null"
+                            android:checked="true"
+                            android:gravity="center"
+                            android:text="EPC"
+                            android:textSize="11sp" />
+
+                        <RadioButton
+                            android:id="@+id/rbTID"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_chip_bg"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:text="TID"
+                            android:textSize="11sp" />
+
+                        <RadioButton
+                            android:id="@+id/rbUser"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_chip_bg"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:text="USER"
+                            android:textSize="11sp" />
+                    </RadioGroup>
+
+                    <Button
+                        android:id="@+id/btSet"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="#0F172A"
+                        android:text="تطبيق الفلتر"
+                        android:textSize="12sp"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- البحث اليدوي عن GTIN/EPC -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etGtinInput"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_input_field"
+                    android:hint="أدخل رمز GTIN-13 أو EPC"
+                    android:inputType="text"
+                    android:paddingHorizontal="14dp"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCheckGtin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="#2563EB"
+                    android:text="فحص"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp" />
+            </LinearLayout>
+
+            <!-- 📊 ملخص الجرد الموحد Dashboard Grid -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/tableBatchSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#0F172A"
+                        android:padding="12dp">
+
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="حالة القطعة"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:textColor="#2E7D32" />
+                            android:text="MIRA Batch Dashboard"
+                            android:textColor="#F8FAFC"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="موجز التدقيق"
+                            android:textColor="#94A3B8"
+                            android:textSize="11sp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvMiraProductName"
+                    <!-- Stats Matrix Grid -->
+                    <GridLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="📦 اسم المنتج"
-                        android:textColor="#333333"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="4dp" />
+                        android:columnCount="2"
+                        android:padding="8dp"
+                        android:rowCount="2">
+
+                        <!-- Total Card -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/bg_stat_total"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="إجمالي القطع"
+                                android:textColor="#475569"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvBatchTotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#0F172A"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Allowed Card -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/bg_stat_success"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="مصرح"
+                                    android:textColor="#166534"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatchAllowedPct"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0%"
+                                    android:textColor="#166534"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvBatchAllowed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#15803D"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Blocked Card -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/bg_stat_danger"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="ممنوع"
+                                    android:textColor="#991B1B"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatchBlockedPct"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0%"
+                                    android:textColor="#991B1B"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvBatchBlocked"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#DC2626"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Unknown Card -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/bg_stat_warning"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="مجهول"
+                                    android:textColor="#92400E"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatchUnknownPct"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0%"
+                                    android:textColor="#92400E"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvBatchUnknown"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#D97706"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </GridLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 🟢 بطاقة نتيجة MIRA Digital Trust™ الفردية -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMiraResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="3dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#1E293B"
+                        android:gravity="center_vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="MIRA Digital Trust™"
+                            android:textColor="#F8FAFC"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvMiraStatusBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/badge_background"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="جاري..."
+                            android:textColor="#FFFFFF"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutMiraLoading"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="24dp"
+                        android:visibility="gone">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:indeterminate="true"
+                            app:indicatorColor="#2563EB" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="جاري التحقق من السجل الرقمي..."
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutMiraDetails"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="140dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@drawable/bg_image_placeholder">
+
+                            <ImageView
+                                android:id="@+id/ivMiraItemImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="fitCenter"
+                                android:visibility="gone" />
+
+                            <ProgressBar
+                                android:id="@+id/progressImageLoading"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/tvNoImagePlaceholder"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:text="معاينة المنتج غير متوفرة"
+                                android:textColor="#94A3B8"
+                                android:textSize="12sp" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:id="@+id/statusIndicator"
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/circle_indicator" />
+
+                            <TextView
+                                android:id="@+id/tvMiraStatus"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="الحالة التشغيلية"
+                                android:textColor="#0F172A"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvMiraProductName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="اسم السلعة المسجلة"
+                            android:textColor="#334155"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvMiraEpcGtin"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="monospace"
+                            android:text="EPC/GTIN Identification"
+                            android:textColor="#64748B"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Table Header Bar -->
+            <LinearLayout
+                android:id="@+id/layout4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_table_header"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="5"
+                    android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/tvMiraEpcGtin"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🏷️ الكود"
-                        android:textColor="#777777"
+                        android:text="TAGS"
+                        android:textColor="#38BDF8"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="0"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="/"
+                        android:textColor="#64748B"
                         android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="العدد"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="RSSI"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Phase"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
             </LinearLayout>
 
-        </LinearLayout>
-    </ScrollView>
+            <!-- قائمة الوسوم المجلوبة -->
+            <ListView
+                android:id="@+id/LvTags"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:background="#FFFFFF"
+                android:divider="#F1F5F9"
+                android:dividerHeight="1dp"
+                android:nestedScrollingEnabled="true" />
 
-    <!-- ========== عداد الوقت والجلسة ========== -->
-    <LinearLayout
-        android:id="@+id/llContinuous"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:background="#FFFFFF"
-        android:paddingVertical="4dp">
-
-        <TextView
-            android:id="@+id/tvContinuous"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/workTime" />
-
-        <EditText
-            android:id="@+id/etTime"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="36000000"
-            android:inputType="numberDecimal"
-            android:maxLength="6"
-            android:singleLine="true" />
-
-        <TextView
-            android:id="@+id/tvMS"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:text="@string/second" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="الوقت: " />
-
-        <TextView
-            android:id="@+id/tvTime"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0s" />
-
-        <CheckBox
-            android:id="@+id/cbEPC_Tam"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="EPC+TamperAlarm"
-            android:visibility="gone" />
-    </LinearLayout>
-
-    <!-- ========== قائمة الوسوم المجلوبة بالمسح ========== -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/layout4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#1A237E"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="6dp">
-
+            <!-- عداد وقت الجلسة -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:id="@+id/llContinuous"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="5"
-                android:orientation="horizontal">
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp">
+
+                <TextView
+                    android:id="@+id/tvContinuous"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="الجلسة:"
+                    android:textColor="#64748B"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etTime"
+                    android:layout_width="60dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_input_field"
+                    android:gravity="center"
+                    android:inputType="numberDecimal"
+                    android:maxLength="6"
+                    android:text="3600"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvMS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="ث"
+                    android:textColor="#64748B"
+                    android:textSize="11sp" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="TAG"
-                    android:textColor="#FFFFFF"
+                    android:text="الوقت المنقضي: "
+                    android:textColor="#64748B"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="0s"
+                    android:textColor="#2563EB"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tv_count"
+                <CheckBox
+                    android:id="@+id/cbPhase"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="24dp"
-                    android:text="0"
-                    android:textColor="#FFD54F"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:visibility="gone" />
 
-                <TextView
+                <CheckBox
+                    android:id="@+id/cbEPC_Tam"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text=" / "
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tv_total"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textColor="#80CBC4"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:visibility="gone" />
             </LinearLayout>
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="@string/tvTagCount"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="RSSI"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="@string/tv_phase"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
         </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        <ListView
-            android:id="@+id/LvTags"
+    <!-- 🚀 Floating Control Bottom Bar (منطقة زر الإجراءات السريعة) -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardElevation="12dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.TopRounded">
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingHorizontal="4dp"
-            android:divider="#E2E8F0"
-            android:dividerHeight="1px" />
-    </LinearLayout>
-</LinearLayout>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/BtInventory"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="2"
+                android:backgroundTint="#2563EB"
+                android:text="بدء قراءة RFID"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/BtClear"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="مسح"
+                android:textColor="#64748B"
+                android:textSize="13sp"
+                app:cornerRadius="12dp"
+                app:strokeColor="#CBD5E1" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
