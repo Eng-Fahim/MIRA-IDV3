@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_dashboard" android:title="الرئيسية" android:icon="@drawable/ic_dashboard"/>
+    <item android:id="@+id/nav_scan" android:title="مسح" android:icon="@drawable/ic_scan"/>
+    <item android:id="@+id/nav_studio" android:title="تكويد" android:icon="@drawable/ic_studio"/>
+    <item android:id="@+id/nav_gates" android:title="بوابات" android:icon="@drawable/ic_gate"/>
+    <item android:id="@+id/nav_settings" android:title="إعدادات" android:icon="@drawable/ic_settings"/>
+</menu>
