@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.mira.bridge'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.mira.bridge"
         minSdk 24
-        targetSdk 34
+        targetSdk 33
         versionCode 1
         versionName "3.0.0"
         vectorDrawables.useSupportLibrary = true
