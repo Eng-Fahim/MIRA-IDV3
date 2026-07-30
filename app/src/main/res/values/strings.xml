@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MIRA Bridge</string>
+    <string name="dashboard">الرئيسية</string>
+    <string name="scan">مسح</string>
+    <string name="studio">تكويد</string>
+    <string name="gates">بوابات</string>
+    <string name="settings">إعدادات</string>
+
+    <string-array name="karat_values">
+        <item>24K</item>
+        <item>22K</item>
+        <item>21K</item>
+        <item>18K</item>
+        <item>14K</item>
+    </string-array>
+
+    <string-array name="jewelry_types">
+        <item>خاتم</item>
+        <item>سوارة</item>
+        <item>قلادة</item>
+        <item>حلق</item>
+        <item>سلسال</item>
+        <item>دبلة</item>
+        <item>طقم</item>
+        <item>أخرى</item>
+    </string-array>
+</resources>
