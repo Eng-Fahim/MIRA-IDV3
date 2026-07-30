@@ -61,7 +61,7 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         checkReadWritePermission();
-        setTitle(String.format(getString(R.string.app_name) + "(v%s)", getVerName()));
+        setTitle("MIRA Bridge™");
         initSound();
         initUHF();
         initViewPageData();
