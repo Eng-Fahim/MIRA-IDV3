@@ -14,8 +14,6 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-
-import com.example.uhf.fragment.MiraDashboardFragment;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -26,21 +24,23 @@ import com.example.uhf.fragment.AuthenticateNxpUcodeDnaFragment;
 import com.example.uhf.fragment.BlockPermalockFragment;
 import com.example.uhf.fragment.BlockWriteFragment;
 import com.example.uhf.fragment.MarginReadFragment;
+import com.example.uhf.fragment.MiraDashboardFragment;
+import com.example.uhf.fragment.MiraSecureGateFragment;
 import com.example.uhf.fragment.ProtectedModeAndShortRangeModeFragment;
 import com.example.uhf.fragment.UHFKillFragment;
-import com.example.uhf.fragment.UHFTagFlashFragment;
 import com.example.uhf.fragment.UHFLocationFragment;
 import com.example.uhf.fragment.UHFLockFragment;
 import com.example.uhf.fragment.UHFRadarLocationFragment;
 import com.example.uhf.fragment.UHFReadTagFragment;
 import com.example.uhf.fragment.UHFReadWriteFragment;
 import com.example.uhf.fragment.UHFSetFragment;
+import com.example.uhf.fragment.UHFTagFlashFragment;
 import com.example.uhf.fragment.UHFTagLitFragment;
 import com.example.uhf.fragment.UHFUpgradeFragment;
 import com.example.uhf.tools.ExportExcelAsyncTask;
 import com.example.uhf.tools.UIHelper;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
-import com.example.uhf.fragment.MiraSecureGateFragment;
+import com.rscja.deviceapi.interfaces.ConnectionStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,8 +54,6 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     public ArrayList<UHFTAGInfo> tagList = new ArrayList<UHFTAGInfo>();
     public boolean loopFlag = false;
     private PlaySoundThread playSoundThread = null;
-    
-    // 🟢 الفragment الحالي
     public Fragment currentFragment;
 
     @Override
@@ -70,23 +68,31 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     }
 
     // ============================================
+    // 🟢 التحقق من حالة القارئ
+    // ============================================
+    public boolean isReaderReady() {
+        try {
+            return mReader != null && mReader.getConnectStatus() == ConnectionStatus.CONNECTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // ============================================
     // 🟢 تفويض onActivityResult للـ Fragment الحالي
     // ============================================
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         
-        // 🟢 تفويض للـ Fragment النشط
         if (mTabHost != null) {
             String currentTabTag = mTabHost.getCurrentTabTag();
             Fragment fragment = getSupportFragmentManager().findFragmentByTag(currentTabTag);
-            
             if (fragment != null) {
                 fragment.onActivityResult(requestCode, resultCode, data);
             }
         }
         
-        // 🟢 تفويض إضافي للـ currentFragment إذا كان مختلفاً
         if (currentFragment != null && currentFragment instanceof UHFReadTagFragment) {
             currentFragment.onActivityResult(requestCode, resultCode, data);
         }
@@ -97,64 +103,79 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
         mTabHost.setup(this, fm, R.id.realtabcontent);
 
-        // في initViewPageData() - اجعل Dashboard هو التبويب الأول:
-mTabHost.addTab(
-    mTabHost.newTabSpec("Dashboard")
-        .setIndicator("🏠"),
-    MiraDashboardFragment.class, null
-);
+        // 🏠 Dashboard - التبويب الرئيسي
+        mTabHost.addTab(
+            mTabHost.newTabSpec("Dashboard").setIndicator("🏠"),
+            MiraDashboardFragment.class, null
+        );
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan)).setIndicator(getString(R.string.uhf_msg_tab_scan)),
-                UHFReadTagFragment.class, null);
+        // 📷 Scan
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan))
+            .setIndicator(getString(R.string.uhf_msg_tab_scan)),
+            UHFReadTagFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)),
-                UHFSetFragment.class, null);
+        // ⚙️ Config
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set))
+            .setIndicator(getString(R.string.uhf_msg_tab_set)),
+            UHFSetFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getResources().getString(R.string.uhf_radar_loaction)).setIndicator(getResources().getString(R.string.uhf_radar_loaction)),
-                UHFRadarLocationFragment.class, null);
+        // 📡 Radar
+        mTabHost.addTab(mTabHost.newTabSpec(getResources().getString(R.string.uhf_radar_loaction))
+            .setIndicator(getResources().getString(R.string.uhf_radar_loaction)),
+            UHFRadarLocationFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)), UHFLocationFragment.class, null);
+        // 📍 Locating
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location))
+            .setIndicator(getString(R.string.location)),
+            UHFLocationFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_tag_lit)).setIndicator(getString(R.string.title_tag_lit)),
-                UHFTagLitFragment.class, null);
+        // 💡 Tag Lit
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_tag_lit))
+            .setIndicator(getString(R.string.title_tag_lit)),
+            UHFTagLitFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_tag_flash)).setIndicator(getString(R.string.title_tag_flash)),
-                UHFTagFlashFragment.class, null);
+        // ⚡ Tag Flash
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_tag_flash))
+            .setIndicator(getString(R.string.title_tag_flash)),
+            UHFTagFlashFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec("Protected-ShortRange").setIndicator("Protected-ShortRange"),
-                ProtectedModeAndShortRangeModeFragment.class, null);
+        // Read/Write
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read_write))
+            .setIndicator(getString(R.string.uhf_msg_tab_read_write)),
+            UHFReadWriteFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec("MarginRead").setIndicator("MarginRead"),
-                MarginReadFragment.class, null);
+        // Lock
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock))
+            .setIndicator(getString(R.string.uhf_msg_tab_lock)),
+            UHFLockFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec("NxpUcodeDna").setIndicator("NxpUcodeDna"),
-                AuthenticateNxpUcodeDnaFragment.class, null);
+        // Kill
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill))
+            .setIndicator(getString(R.string.uhf_msg_tab_kill)),
+            UHFKillFragment.class, null);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read_write)).setIndicator(getString(R.string.uhf_msg_tab_read_write)),
-                UHFReadWriteFragment.class, null);
+        // 🚪 MIRA Secure Gate™
+        mTabHost.addTab(
+            mTabHost.newTabSpec("MIRA Secure Gate™").setIndicator("🚪"),
+            MiraSecureGateFragment.class, null
+        );
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)),
-                UHFLockFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)),
-                UHFKillFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec("BlockWrite").setIndicator("BlockWrite"),
-                BlockWriteFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec("BlockPermalock").setIndicator("BlockPermalock"),
-                BlockPermalockFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.action_rfid_upgrader)).setIndicator(getString(R.string.action_rfid_upgrader)),
-                UHFUpgradeFragment.class, null);
-    
-// في initViewPageData()، أضف بعد تبويب RADAR:
-mTabHost.addTab(
-    mTabHost.newTabSpec("MIRA Secure Gate™")
-        .setIndicator("🚪 MIRA Gate"),
-    MiraSecureGateFragment.class, null
-);
+        // تبويبات متقدمة (مخفية أو ثانوية)
+        mTabHost.addTab(mTabHost.newTabSpec("Protected-ShortRange").setIndicator("P-SR"),
+            ProtectedModeAndShortRangeModeFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec("MarginRead").setIndicator("MR"),
+            MarginReadFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec("NxpUcodeDna").setIndicator("DNA"),
+            AuthenticateNxpUcodeDnaFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec("BlockWrite").setIndicator("BW"),
+            BlockWriteFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec("BlockPermalock").setIndicator("BP"),
+            BlockPermalockFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.action_rfid_upgrader))
+            .setIndicator(getString(R.string.action_rfid_upgrader)),
+            UHFUpgradeFragment.class, null);
     }
+
     @Override
     protected void onDestroy() {
         Log.e("zz_pp", "onDestroy()");
@@ -190,7 +211,6 @@ mTabHost.addTab(
         soundMap.put(1, soundPool.load(this, R.raw.barcodebeep, 1));
         soundMap.put(2, soundPool.load(this, R.raw.serror, 2));
         am = (AudioManager) this.getSystemService(AUDIO_SERVICE);
-
         playSoundThread = new PlaySoundThread();
         playSoundThread.start();
     }
@@ -203,16 +223,12 @@ mTabHost.addTab(
     }
 
     public void playSound(int id) {
+        if (soundPool == null) return;
         float audioMaxVolume = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         float audioCurrentVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC);
         volumnRatio = audioCurrentVolume / audioMaxVolume;
         try {
-            soundPool.play(soundMap.get(id), volumnRatio,
-                    volumnRatio,
-                    1,
-                    0,
-                    1
-            );
+            soundPool.play(soundMap.get(id), volumnRatio, volumnRatio, 1, 0, 1);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -237,74 +253,45 @@ mTabHost.addTab(
     }
 
     private Toast toast;
-
     public void showToast(String text) {
-        if (toast != null) {
-            toast.cancel();
-        }
+        if (toast != null) toast.cancel();
         toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
         toast.show();
     }
-
-    public void showToast(int resId) {
-        showToast(getString(resId));
-    }
-
-    public void playSoundDelayed(int speed) {
-        playSoundThread.play(speed);
-    }
+    public void showToast(int resId) { showToast(getString(resId)); }
+    public void playSoundDelayed(int speed) { playSoundThread.play(speed); }
 
     private Object objectLock = new Object();
-
     private class PlaySoundThread extends Thread {
         private boolean isStop = false;
         int interval = 500;
         long lastPlayTime = SystemClock.elapsedRealtime();
-
         @Override
         public void run() {
             while (!isStop) {
                 long start = 0;
                 synchronized (objectLock) {
                     while (!isStop) {
-                        if (start == 0) {
-                            start = SystemClock.elapsedRealtime();
-                        } else {
-                            if (SystemClock.elapsedRealtime() - start >= interval) {
-                                break;
-                            } else {
-                                SystemClock.sleep(1);
-                            }
-                        }
+                        if (start == 0) start = SystemClock.elapsedRealtime();
+                        else if (SystemClock.elapsedRealtime() - start >= interval) break;
+                        else SystemClock.sleep(1);
                     }
                 }
-                if (SystemClock.elapsedRealtime() - lastPlayTime < 500) {
-                    playSound(1);
-                }
+                if (SystemClock.elapsedRealtime() - lastPlayTime < 500) playSound(1);
             }
         }
-
         public void play(int speed) {
             int t = 3;
-            if (speed > 85) {
-                t = 3;
-            } else if (speed > 66) {
-                t = 100 - speed;
-            } else if (speed > 33) {
-                t = (100 - speed) * 2;
-            } else {
-                t = (100 - speed) * 3;
-            }
-
+            if (speed > 85) t = 3;
+            else if (speed > 66) t = 100 - speed;
+            else if (speed > 33) t = (100 - speed) * 2;
+            else t = (100 - speed) * 3;
             interval = t;
             lastPlayTime = SystemClock.elapsedRealtime();
         }
-
         public void stopPlay() {
             isStop = true;
-            synchronized (objectLock) {
-                objectLock.notifyAll();
-            }
+            synchronized (objectLock) { objectLock.notifyAll(); }
         }
     }
 }
