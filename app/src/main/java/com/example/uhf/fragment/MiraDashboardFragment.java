@@ -1,5 +1,6 @@
 package com.example.uhf.fragment;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,13 +12,15 @@ import android.widget.TextView;
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
 public class MiraDashboardFragment extends KeyDwonFragment {
 
     private UHFMainActivity mContext;
-    private Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable updateRunnable;
     
     private TextView tvGreeting, tvDate, tvTime;
     private TextView tvTotalItems, tvSoldToday, tvActiveGates;
@@ -27,18 +30,22 @@ public class MiraDashboardFragment extends KeyDwonFragment {
     private View cardScan, cardGate, cardRadar, cardSettings;
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        // التحقق من نوع الـ Activity بأمان لتجنب الـ ClassCastException
+        if (context instanceof UHFMainActivity) {
+            mContext = (UHFMainActivity) context;
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_mira_dashboard, container, false);
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        mContext = (UHFMainActivity) getActivity();
-        if (mContext == null) return;
-
-        View v = getView();
-        if (v == null) return;
+    public void onViewCreated(View v, Bundle savedInstanceState) {
+        super.onViewCreated(v, savedInstanceState);
 
         tvGreeting = v.findViewById(R.id.tvGreeting);
         tvDate = v.findViewById(R.id.tvDate);
@@ -65,24 +72,33 @@ public class MiraDashboardFragment extends KeyDwonFragment {
         if (cardSettings != null) cardSettings.setOnClickListener(v2 -> switchTab(2));
 
         updateAll();
-        handler.postDelayed(new Runnable() {
-            @Override public void run() {
-                updateAll();
-                handler.postDelayed(this, 30000);
+        
+        // إعداد الـ Runnable بأمان مع التحقق من وجود الـ Fragment في الواجهة
+        updateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isAdded() && getActivity() != null) {
+                    updateAll();
+                    handler.postDelayed(this, 30000);
+                }
             }
-        }, 30000);
+        };
+        handler.postDelayed(updateRunnable, 30000);
     }
 
     private void updateAll() {
+        if (!isAdded()) return;
+
         Date now = new Date();
-        SimpleDateFormat df = new SimpleDateFormat("EEEE, dd MMMM yyyy", new Locale("ar"));
+        SimpleDateFormat df = new SimpleDateFormat("EEEE، dd MMMM yyyy", new Locale("ar"));
         SimpleDateFormat tf = new SimpleDateFormat("hh:mm:ss a", new Locale("ar"));
 
         if (tvDate != null) tvDate.setText(df.format(now));
         if (tvTime != null) tvTime.setText(tf.format(now));
         
         if (tvGreeting != null) {
-            int h = now.getHours();
+            Calendar calendar = Calendar.getInstance();
+            int h = calendar.get(Calendar.HOUR_OF_DAY);
             tvGreeting.setText(h < 12 ? "صباح الخير ☀️" : h < 17 ? "مساء الخير 🌤️" : "مساء الخير 🌙");
         }
 
@@ -102,15 +118,30 @@ public class MiraDashboardFragment extends KeyDwonFragment {
     }
 
     private void switchTab(int index) {
+        if (mContext == null && getActivity() instanceof UHFMainActivity) {
+            mContext = (UHFMainActivity) getActivity();
+        }
+        
         if (mContext != null && mContext.mTabHost != null) {
             mContext.mTabHost.setCurrentTab(index);
         }
     }
 
-    @Override public void myOnKeyDwon() {}
+    @Override 
+    public void myOnKeyDwon() {}
     
-    @Override public void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacksAndMessages(null);
+    @Override 
+    public void onDestroyView() {
+        super.onDestroyView();
+        // إيقاف الـ Handler عند تدمير الواجهة للحد من التسريب والانهيارات
+        if (updateRunnable != null) {
+            handler.removeCallbacks(updateRunnable);
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mContext = null;
     }
 }
