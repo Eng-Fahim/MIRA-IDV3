@@ -908,7 +908,7 @@
     <string name="fingerprint_msg_name_not_null">لا يمكن أن يكون الاسم فارغاً</string>
     <string name="fingerprint_msg_page_id_need_digits">يجب أن يكون معرف الصفحة رقماً</string>
     <string name="fingerprint_msg_page_id_need_0_to_254">يجب أن يكون معرف الصفحة في النطاق من 0 إلى 254</string>
-    <fingerprint_msg_acq_succ>تم الالتقاط بنجاح</fingerprint_msg_acq_succ>
+    <string name="fingerprint_msg_acq_succ">تم الالتقاط بنجاح</string>
     <string name="fingerprint_msg_acq_fail">فشل الالتقاط</string>
     <string name="fingerprint_title_show_img">الصورة</string>
     <string name="fingerprint_title_show_imgiso">الصورة (ISO)</string>
