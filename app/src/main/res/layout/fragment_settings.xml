@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E27">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="⚙️ الإعدادات" android:textColor="#FFFFFF"
+            android:textSize="22sp" android:textStyle="bold" android:layout_marginBottom="20dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="🔑 API URL" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <EditText android:id="@+id/etApiUrl"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:textColor="#FFFFFF" android:textColorHint="#546E7A"
+            android:background="#1A1E3A" android:paddingHorizontal="12dp" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="🔐 API Key" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <EditText android:id="@+id/etApiKey"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:textColor="#FFFFFF" android:textColorHint="#546E7A"
+            android:background="#1A1E3A" android:paddingHorizontal="12dp"
+            android:inputType="textPassword" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="🚪 Gate ID" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <EditText android:id="@+id/etGateId"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:textColor="#FFFFFF" android:textColorHint="#546E7A"
+            android:background="#1A1E3A" android:paddingHorizontal="12dp" android:layout_marginBottom="20dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="20dp">
+
+            <Button android:id="@+id/btnSave"
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="💾 حفظ" android:background="#4CAF50" android:textColor="#FFFFFF"
+                android:textStyle="bold" android:layout_marginEnd="6dp"/>
+
+            <Button android:id="@+id/btnTest"
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="🔍 اختبار" android:background="#1A73E8" android:textColor="#FFFFFF"
+                android:textStyle="bold" android:layout_marginStart="6dp"/>
+        </LinearLayout>
+
+        <TextView android:id="@+id/tvStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="" android:textColor="#4CAF50" android:textSize="14sp"
+            android:gravity="center"/>
+
+    </LinearLayout>
+</ScrollView>
