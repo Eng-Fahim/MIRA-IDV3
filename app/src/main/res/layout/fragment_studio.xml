@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E27">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="✨ MIRA Studio" android:textColor="#FFFFFF"
+            android:textSize="22sp" android:textStyle="bold" android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="تسجيل قطعة جديدة" android:textColor="#90A4AE"
+            android:textSize="13sp" android:layout_marginBottom="20dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="📦 اسم القطعة" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <EditText android:id="@+id/etTitle"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:hint="مثال: خاتم ذهب عيار 21" android:textColor="#FFFFFF"
+            android:textColorHint="#546E7A" android:background="#1A1E3A"
+            android:paddingHorizontal="12dp" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="⚖️ الوزن (غرام)" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <EditText android:id="@+id/etWeight"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:hint="مثال: 5.200" android:textColor="#FFFFFF"
+            android:textColorHint="#546E7A" android:background="#1A1E3A"
+            android:paddingHorizontal="12dp" android:inputType="numberDecimal" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="💎 العيار" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <Spinner android:id="@+id/spKarat"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:background="#1A1E3A" android:entries="@array/karat_values" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="🏷️ النوع" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <Spinner android:id="@+id/spType"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:background="#1A1E3A" android:entries="@array/jewelry_types" android:layout_marginBottom="12dp"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="🔢 الرقم التسلسلي" android:textColor="#B0BEC5" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp"
+            android:orientation="horizontal" android:layout_marginBottom="12dp">
+            <EditText android:id="@+id/etSerial"
+                android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                android:hint="BWA-000000" android:textColor="#FFFFFF" android:textColorHint="#546E7A"
+                android:background="#1A1E3A" android:paddingHorizontal="12dp"/>
+            <Button android:id="@+id/btnReserve"
+                android:layout_width="wrap_content" android:layout_height="match_parent"
+                android:text="📷 حجز" android:background="#1A73E8" android:textColor="#FFFFFF"
+                android:layout_marginStart="8dp" android:paddingHorizontal="12dp"/>
+        </LinearLayout>
+
+        <Button android:id="@+id/btnRegister"
+            android:layout_width="match_parent" android:layout_height="52dp"
+            android:text="✨ تسجيل القطعة" android:background="#4CAF50"
+            android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="16sp"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView android:id="@+id/tvStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="جاهز" android:textColor="#78909C" android:textSize="13sp"
+            android:gravity="center" android:layout_marginBottom="8dp"/>
+
+        <TextView android:id="@+id/tvResult"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="" android:textColor="#4CAF50" android:textSize="14sp"
+            android:gravity="center" android:background="#1A1E3A" android:padding="12dp"/>
+
+    </LinearLayout>
+</ScrollView>
