@@ -233,7 +233,8 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         mContext = (UHFMainActivity) getActivity();
-        mContext.currentFragment = this;
+        if (mContext == null) return;  
+    mContext.currentFragment = this;
 
         // 🟢 تهيئة مدير الإعدادات
         settingsManager = MiraSettingsManager.getInstance(mContext);
@@ -315,6 +316,7 @@ if (mContext != null && mContext.mReader != null) {
     @Override
     public void onResume() {
         super.onResume();
+if (mContext == null || mContext.mReader == null) return;
         new Thread(() -> {
             getFre(false);
             getLinkParams(false);
@@ -1181,4 +1183,4 @@ if (mContext != null && mContext.mReader != null) {
             .setNegativeButton("إلغاء", null)
             .show();
     }
-             }
+                    }
