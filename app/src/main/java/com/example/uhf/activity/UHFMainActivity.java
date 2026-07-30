@@ -95,6 +95,13 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
         mTabHost.setup(this, fm, R.id.realtabcontent);
 
+        // في initViewPageData() - اجعل Dashboard هو التبويب الأول:
+mTabHost.addTab(
+    mTabHost.newTabSpec("Dashboard")
+        .setIndicator("🏠"),
+    MiraDashboardFragment.class, null
+);
+
         mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan)).setIndicator(getString(R.string.uhf_msg_tab_scan)),
                 UHFReadTagFragment.class, null);
 
