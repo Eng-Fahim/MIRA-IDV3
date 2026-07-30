@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- 🟢 هيدر -->
+        <!-- هيدر -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -24,7 +24,7 @@
                 android:id="@+id/tvGreeting"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="صباح الخير ☀️"
+                android:text="مرحباً"
                 android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -55,7 +55,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 🟢 المخزون -->
+        <!-- المخزون -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -96,7 +96,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 🟢 المبيعات -->
+        <!-- المبيعات -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -129,7 +129,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 🟢 حالة النظام -->
+        <!-- حالة النظام -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -162,7 +162,7 @@
             <TextView android:id="@+id/tvLastSync" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:textColor="#546E7A" android:textSize="10sp" android:layout_marginTop="6dp" android:gravity="end"/>
         </LinearLayout>
 
-        <!-- 🟢 نشاط حديث -->
+        <!-- نشاط حديث -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -187,7 +187,7 @@
             <TextView android:id="@+id/tvRecent3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-" android:textColor="#B0BEC5" android:textSize="11sp" android:paddingVertical="4dp"/>
         </LinearLayout>
 
-        <!-- 🟢 وصول سريع -->
+        <!-- وصول سريع -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -221,7 +221,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 🟢 تذييل -->
+        <!-- تذييل -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
