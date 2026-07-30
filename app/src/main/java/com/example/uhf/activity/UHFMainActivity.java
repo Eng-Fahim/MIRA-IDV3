@@ -1,5 +1,4 @@
 package com.example.uhf.activity;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -37,6 +36,7 @@ import com.example.uhf.fragment.UHFSetFragment;
 import com.example.uhf.fragment.UHFTagFlashFragment;
 import com.example.uhf.fragment.UHFTagLitFragment;
 import com.example.uhf.fragment.UHFUpgradeFragment;
+import com.example.uhf.fragment.MiraPWAWebFragment;
 import com.example.uhf.tools.ExportExcelAsyncTask;
 import com.example.uhf.tools.UIHelper;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
@@ -106,7 +106,12 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan))
             .setIndicator(getString(R.string.uhf_msg_tab_scan)),
             UHFReadTagFragment.class, null);
-        
+
+        // 🌐 MIRA Web (PWA)
+mTabHost.addTab(
+    mTabHost.newTabSpec("MIRA Web").setIndicator("🌐"),
+    MiraPWAWebFragment.class, null
+);
         // 🏠 Dashboard - التبويب الرئيسي
         mTabHost.addTab(
             mTabHost.newTabSpec("Dashboard").setIndicator("🏠"),
