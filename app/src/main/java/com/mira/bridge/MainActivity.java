@@ -1,6 +1,10 @@
 package com.mira.bridge;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -31,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 }
+
+// 🟢 كل الـ Fragments هنا في نفس الملف
 
 class DashboardFragment extends Fragment {
     public DashboardFragment() {}
