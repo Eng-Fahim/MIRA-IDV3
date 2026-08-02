@@ -1,4 +1,4 @@
-package com.example.uhf.fragment;
+package com.mira.rfid;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+// 🔗 استيراد الموارد والأنشطة من الموديول الرئيسي والموديولات الشقيقة
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.engine.SmartScaleConnector;
@@ -323,4 +324,4 @@ public class UHFReadTagFragment extends Fragment {
         super.onDestroy();
         if (scaleConnector != null) scaleConnector.disconnect();
     }
-                }
+}
