@@ -1,4 +1,6 @@
-package com.example.uhf.fragment;
+package com.mira.inventory;
+import com.mira.core.SessionManager;
+import com.mira.rfid.RFIDManager;
 
 import android.graphics.Color;
 import android.os.Bundle;
