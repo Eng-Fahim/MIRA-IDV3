@@ -1,4 +1,4 @@
-package com.example.uhf.fragment;
+package com.mira.rfid.fragment;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -80,11 +80,11 @@ public class UHFSetFragment extends KeyDwonFragment implements OnClickListener {
     private CheckBox cbAutoScan, cbAutoOpenCamera, cbShowScanFrame, cbParseGS1, cbVibrateOnScan;
 
     // =============================================
-// 🟢 إعدادات الجرد
-// =============================================
-private CheckBox cbInventorySound, cbInventoryVibrate, cbInventoryAutoStop;
-private CheckBox cbInventoryShowImages, cbInventorySortByLocation;
-private Spinner spInventoryMode;
+    // 🟢 إعدادات الجرد
+    // =============================================
+    private CheckBox cbInventorySound, cbInventoryVibrate, cbInventoryAutoStop;
+    private CheckBox cbInventoryShowImages, cbInventorySortByLocation;
+    private Spinner spInventoryMode;
 
     // =============================================
     // 🟢 عناصر RFID المُحقونة بـ ViewInject
@@ -224,12 +224,12 @@ private Spinner spInventoryMode;
         cbVibrateOnScan = root.findViewById(R.id.cbVibrateOnScan);
 
         // 🟢 ربط عناصر إعدادات الجرد
-cbInventorySound = root.findViewById(R.id.cbInventorySound);
-cbInventoryVibrate = root.findViewById(R.id.cbInventoryVibrate);
-cbInventoryAutoStop = root.findViewById(R.id.cbInventoryAutoStop);
-cbInventoryShowImages = root.findViewById(R.id.cbInventoryShowImages);
-cbInventorySortByLocation = root.findViewById(R.id.cbInventorySortByLocation);
-spInventoryMode = root.findViewById(R.id.spInventoryMode);
+        cbInventorySound = root.findViewById(R.id.cbInventorySound);
+        cbInventoryVibrate = root.findViewById(R.id.cbInventoryVibrate);
+        cbInventoryAutoStop = root.findViewById(R.id.cbInventoryAutoStop);
+        cbInventoryShowImages = root.findViewById(R.id.cbInventoryShowImages);
+        cbInventorySortByLocation = root.findViewById(R.id.cbInventorySortByLocation);
+        spInventoryMode = root.findViewById(R.id.spInventoryMode);
 
         llMemoryBankParams.setVisibility(View.GONE);
         spMemoryBank.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -249,7 +249,7 @@ spInventoryMode = root.findViewById(R.id.spInventoryMode);
         super.onActivityCreated(savedInstanceState);
         mContext = (UHFMainActivity) getActivity();
         if (mContext == null) return;  
-    mContext.currentFragment = this;
+        mContext.currentFragment = this;
 
         // 🟢 تهيئة مدير الإعدادات
         settingsManager = MiraSettingsManager.getInstance(mContext);
@@ -316,9 +316,9 @@ spInventoryMode = root.findViewById(R.id.spInventoryMode);
 
         // تهيئة Spinner الطاقة
         String ver = "";
-if (mContext != null && mContext.mReader != null) {
-    ver = mContext.mReader.getVersion();
-}
+        if (mContext != null && mContext.mReader != null) {
+            ver = mContext.mReader.getVersion();
+        }
         arrPow = R.array.arrayPower;
         ArrayAdapter powerAdapter = ArrayAdapter.createFromResource(mContext, arrPow, android.R.layout.simple_spinner_item);
         powerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -331,7 +331,7 @@ if (mContext != null && mContext.mReader != null) {
     @Override
     public void onResume() {
         super.onResume();
-if (mContext == null || mContext.mReader == null) return;
+        if (mContext == null || mContext.mReader == null) return;
         new Thread(() -> {
             getFre(false);
             getLinkParams(false);
@@ -350,61 +350,73 @@ if (mContext == null || mContext.mReader == null) return;
     // =============================================
 
     private void applyMiraYemenMode() {
-        mContext.mReader.setFrequencyMode((byte) 0x01);
-        mContext.mReader.setPower(26);
-        mContext.mReader.setRFLink(0);
+        if (mContext != null && mContext.mReader != null) {
+            mContext.mReader.setFrequencyMode((byte) 0x01);
+            mContext.mReader.setPower(26);
+            mContext.mReader.setRFLink(0);
+        }
         
-        cbSoundOnScan.setChecked(true);
-        cbShowMiraCard.setChecked(true);
-        cbAutoQueryMira.setChecked(true);
-        cbRadarSimulation.setChecked(false);
+        if (cbSoundOnScan != null) cbSoundOnScan.setChecked(true);
+        if (cbShowMiraCard != null) cbShowMiraCard.setChecked(true);
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(true);
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(false);
         if (rbRfidMode != null) rbRfidMode.setChecked(true);
         if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(true);
         if (cbParseGS1 != null) cbParseGS1.setChecked(true);
         if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(true);
         
-        settingsManager.saveSetting("working_mode", "mira_yemen");
+        if (settingsManager != null) {
+            settingsManager.saveSetting("working_mode", "mira_yemen");
+        }
         saveAllSettings();
         
         Toast.makeText(mContext, "🇾🇪 تم تطبيق نمط MIRA ID Yemen", Toast.LENGTH_SHORT).show();
     }
 
     private void applyMiraStandardMode() {
-        mContext.mReader.setFrequencyMode((byte) 0x08);
-        mContext.mReader.setPower(22);
+        if (mContext != null && mContext.mReader != null) {
+            mContext.mReader.setFrequencyMode((byte) 0x08);
+            mContext.mReader.setPower(22);
+        }
         
-        cbSoundOnScan.setChecked(true);
-        cbShowMiraCard.setChecked(true);
-        cbAutoQueryMira.setChecked(true);
-        cbRadarSimulation.setChecked(true);
+        if (cbSoundOnScan != null) cbSoundOnScan.setChecked(true);
+        if (cbShowMiraCard != null) cbShowMiraCard.setChecked(true);
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(true);
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(true);
         if (rbHybridMode != null) rbHybridMode.setChecked(true);
         
-        settingsManager.saveSetting("working_mode", "mira_standard");
+        if (settingsManager != null) {
+            settingsManager.saveSetting("working_mode", "mira_standard");
+        }
         saveAllSettings();
         
         Toast.makeText(mContext, "🌍 تم تطبيق النمط العالمي", Toast.LENGTH_SHORT).show();
     }
 
     private void applyRfidOnlyMode() {
-        cbSoundOnScan.setChecked(true);
-        cbShowMiraCard.setChecked(false);
-        cbAutoQueryMira.setChecked(false);
-        cbRadarSimulation.setChecked(false);
+        if (cbSoundOnScan != null) cbSoundOnScan.setChecked(true);
+        if (cbShowMiraCard != null) cbShowMiraCard.setChecked(false);
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(false);
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(false);
         if (rbRfidMode != null) rbRfidMode.setChecked(true);
         if (cbAutoOpenCamera != null) cbAutoOpenCamera.setChecked(false);
         
-        settingsManager.saveSetting("working_mode", "rfid_only");
+        if (settingsManager != null) {
+            settingsManager.saveSetting("working_mode", "rfid_only");
+        }
         saveAllSettings();
         
         Toast.makeText(mContext, "📡 نمط RFID فقط", Toast.LENGTH_SHORT).show();
     }
 
     private void applyDevMode() {
-        cbRadarSimulation.setChecked(true);
-        cbAutoQueryMira.setChecked(false);
+        if (cbRadarSimulation != null) cbRadarSimulation.setChecked(true);
+        if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(false);
         if (rbHybridMode != null) rbHybridMode.setChecked(true);
         
-        settingsManager.saveSetting("working_mode", "dev");
+        if (settingsManager != null) {
+            settingsManager.saveSetting("working_mode", "dev");
+        }
         saveAllSettings();
         
         Toast.makeText(mContext, "🛠️ نمط المطور", Toast.LENGTH_SHORT).show();
@@ -444,19 +456,25 @@ if (mContext == null || mContext.mReader == null) return;
     // =============================================
 
     private void testMiraConnection() {
-        tvMiraConnectionStatus.setText("🟡 جاري الاختبار...");
-        tvMiraConnectionStatus.setTextColor(Color.parseColor("#FF9800"));
+        if (tvMiraConnectionStatus != null) {
+            tvMiraConnectionStatus.setText("🟡 جاري الاختبار...");
+            tvMiraConnectionStatus.setTextColor(Color.parseColor("#FF9800"));
+        }
 
         new Thread(() -> {
             try {
-                String apiUrl = spMiraApiUrl.getSelectedItem().toString();
-                String apiKey = etMiraApiKey.getText().toString().trim();
-                String gateId = etMiraGateId.getText().toString().trim();
+                String apiUrl = (spMiraApiUrl != null && spMiraApiUrl.getSelectedItem() != null) 
+                        ? spMiraApiUrl.getSelectedItem().toString() : "";
+                String apiKey = etMiraApiKey != null ? etMiraApiKey.getText().toString().trim() : "";
+                String gateId = etMiraGateId != null ? etMiraGateId.getText().toString().trim() : "";
 
                 if (apiKey.isEmpty()) {
                     mHandler.post(() -> {
-                        tvMiraConnectionStatus.setText("🔴 الرجاء إدخال مفتاح API");
-                        tvMiraConnectionStatus.setTextColor(Color.RED);
+                        if (!isAdded() || getActivity() == null) return;
+                        if (tvMiraConnectionStatus != null) {
+                            tvMiraConnectionStatus.setText("🔴 الرجاء إدخال مفتاح API");
+                            tvMiraConnectionStatus.setTextColor(Color.RED);
+                        }
                     });
                     return;
                 }
@@ -494,40 +512,52 @@ if (mContext == null || mContext.mReader == null) return;
                 Log.d(TAG, "MIRA Test Response: " + code + " - " + response.toString());
 
                 mHandler.post(() -> {
+                    if (!isAdded() || getActivity() == null) return;
                     if (code >= 200 && code < 300) {
-                        tvMiraConnectionStatus.setText("🟢 متصل بـ MIRA Server ✓");
-                        tvMiraConnectionStatus.setTextColor(Color.parseColor("#4CAF50"));
-                        mContext.showToast("✅ تم الاتصال بـ MIRA بنجاح");
+                        if (tvMiraConnectionStatus != null) {
+                            tvMiraConnectionStatus.setText("🟢 متصل بـ MIRA Server ✓");
+                            tvMiraConnectionStatus.setTextColor(Color.parseColor("#4CAF50"));
+                        }
+                        if (mContext != null) mContext.showToast("✅ تم الاتصال بـ MIRA بنجاح");
                     } else if (code == 401) {
-                        tvMiraConnectionStatus.setText("🔴 غير مصرح - تحقق من مفتاح API");
-                        tvMiraConnectionStatus.setTextColor(Color.RED);
-                        mContext.showToast("❌ مفتاح API غير صحيح");
+                        if (tvMiraConnectionStatus != null) {
+                            tvMiraConnectionStatus.setText("🔴 غير مصرح - تحقق من مفتاح API");
+                            tvMiraConnectionStatus.setTextColor(Color.RED);
+                        }
+                        if (mContext != null) mContext.showToast("❌ مفتاح API غير صحيح");
                     } else {
-                        tvMiraConnectionStatus.setText("🔴 فشل الاتصال (كود: " + code + ")");
-                        tvMiraConnectionStatus.setTextColor(Color.RED);
-                        mContext.showToast("❌ فشل الاتصال - كود: " + code);
+                        if (tvMiraConnectionStatus != null) {
+                            tvMiraConnectionStatus.setText("🔴 فشل الاتصال (كود: " + code + ")");
+                            tvMiraConnectionStatus.setTextColor(Color.RED);
+                        }
+                        if (mContext != null) mContext.showToast("❌ فشل الاتصال - كود: " + code);
                     }
                 });
                 
             } catch (Exception e) {
                 Log.e(TAG, "MIRA Connection Test Error: " + e.getMessage());
                 mHandler.post(() -> {
-                    tvMiraConnectionStatus.setText("🔴 خطأ: " + e.getMessage());
-                    tvMiraConnectionStatus.setTextColor(Color.RED);
-                    mContext.showToast("❌ خطأ في الاتصال");
+                    if (!isAdded() || getActivity() == null) return;
+                    if (tvMiraConnectionStatus != null) {
+                        tvMiraConnectionStatus.setText("🔴 خطأ: " + e.getMessage());
+                        tvMiraConnectionStatus.setTextColor(Color.RED);
+                    }
+                    if (mContext != null) mContext.showToast("❌ خطأ في الاتصال");
                 });
             }
         }).start();
     }
 
     private void saveAllSettings() {
-        String apiUrl = spMiraApiUrl.getSelectedItem().toString();
-        String apiKey = etMiraApiKey.getText().toString().trim();
-        String gateId = etMiraGateId.getText().toString().trim();
-        boolean soundOnScan = cbSoundOnScan.isChecked();
-        boolean showMiraCard = cbShowMiraCard.isChecked();
-        boolean radarSimulation = cbRadarSimulation.isChecked();
-        boolean autoQueryMira = cbAutoQueryMira.isChecked();
+        if (mContext == null) return;
+
+        String apiUrl = (spMiraApiUrl != null && spMiraApiUrl.getSelectedItem() != null) ? spMiraApiUrl.getSelectedItem().toString() : "";
+        String apiKey = etMiraApiKey != null ? etMiraApiKey.getText().toString().trim() : "";
+        String gateId = etMiraGateId != null ? etMiraGateId.getText().toString().trim() : "";
+        boolean soundOnScan = cbSoundOnScan != null && cbSoundOnScan.isChecked();
+        boolean showMiraCard = cbShowMiraCard != null && cbShowMiraCard.isChecked();
+        boolean radarSimulation = cbRadarSimulation != null && cbRadarSimulation.isChecked();
+        boolean autoQueryMira = cbAutoQueryMira != null && cbAutoQueryMira.isChecked();
 
         // حفظ محلي
         SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
@@ -547,25 +577,30 @@ if (mContext == null || mContext.mReader == null) return;
         editor.putBoolean("vibrate_on_scan", cbVibrateOnScan != null && cbVibrateOnScan.isChecked());
 
         // 🟢 حفظ إعدادات الجرد
-editor.putString("inventory_mode", spInventoryMode.getSelectedItem().toString());
-editor.putString("inventory_sound", cbInventorySound.isChecked() ? "true" : "false");
-editor.putString("inventory_vibrate", cbInventoryVibrate.isChecked() ? "true" : "false");
-editor.putString("inventory_auto_stop", cbInventoryAutoStop.isChecked() ? "true" : "false");
-editor.putString("inventory_show_images", cbInventoryShowImages.isChecked() ? "true" : "false");
-editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked() ? "true" : "false");
+        if (spInventoryMode != null && spInventoryMode.getSelectedItem() != null) {
+            editor.putString("inventory_mode", spInventoryMode.getSelectedItem().toString());
+        }
+        if (cbInventorySound != null) editor.putString("inventory_sound", cbInventorySound.isChecked() ? "true" : "false");
+        if (cbInventoryVibrate != null) editor.putString("inventory_vibrate", cbInventoryVibrate.isChecked() ? "true" : "false");
+        if (cbInventoryAutoStop != null) editor.putString("inventory_auto_stop", cbInventoryAutoStop.isChecked() ? "true" : "false");
+        if (cbInventoryShowImages != null) editor.putString("inventory_show_images", cbInventoryShowImages.isChecked() ? "true" : "false");
+        if (cbInventorySortByLocation != null) editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked() ? "true" : "false");
+        
         editor.apply();
 
         // إشعار مدير الإعدادات
-        settingsManager.saveSetting("sound_on_scan", soundOnScan);
-        settingsManager.saveSetting("show_mira_card", showMiraCard);
-        settingsManager.saveSetting("radar_simulation", radarSimulation);
-        settingsManager.saveSetting("auto_query_mira", autoQueryMira);
-        settingsManager.saveSetting("scan_mode", getSelectedScanMode());
-        if (cbAutoScan != null) settingsManager.saveSetting("auto_scan", cbAutoScan.isChecked());
-        if (cbAutoOpenCamera != null) settingsManager.saveSetting("auto_open_camera", cbAutoOpenCamera.isChecked());
-        if (cbShowScanFrame != null) settingsManager.saveSetting("show_scan_frame", cbShowScanFrame.isChecked());
-        if (cbParseGS1 != null) settingsManager.saveSetting("parse_gs1", cbParseGS1.isChecked());
-        if (cbVibrateOnScan != null) settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
+        if (settingsManager != null) {
+            settingsManager.saveSetting("sound_on_scan", soundOnScan);
+            settingsManager.saveSetting("show_mira_card", showMiraCard);
+            settingsManager.saveSetting("radar_simulation", radarSimulation);
+            settingsManager.saveSetting("auto_query_mira", autoQueryMira);
+            settingsManager.saveSetting("scan_mode", getSelectedScanMode());
+            if (cbAutoScan != null) settingsManager.saveSetting("auto_scan", cbAutoScan.isChecked());
+            if (cbAutoOpenCamera != null) settingsManager.saveSetting("auto_open_camera", cbAutoOpenCamera.isChecked());
+            if (cbShowScanFrame != null) settingsManager.saveSetting("show_scan_frame", cbShowScanFrame.isChecked());
+            if (cbParseGS1 != null) settingsManager.saveSetting("parse_gs1", cbParseGS1.isChecked());
+            if (cbVibrateOnScan != null) settingsManager.saveSetting("vibrate_on_scan", cbVibrateOnScan.isChecked());
+        }
 
         // حفظ سحابي
         saveSettingsToCloud();
@@ -578,8 +613,8 @@ editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked(
         new Thread(() -> {
             try {
                 String apiUrl = "https://ams.ibreg.org/wp-json/mira-gate/v1/settings";
-                String apiKey = etMiraApiKey.getText().toString().trim();
-                String gateId = etMiraGateId.getText().toString().trim();
+                String apiKey = etMiraApiKey != null ? etMiraApiKey.getText().toString().trim() : "";
+                String gateId = etMiraGateId != null ? etMiraGateId.getText().toString().trim() : "";
                 
                 URL url = new URL(apiUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -594,22 +629,24 @@ editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked(
                 body.put("gate_id", gateId);
                 
                 JSONObject settings = new JSONObject();
-                settings.put("api_url", spMiraApiUrl.getSelectedItem().toString());
+                if (spMiraApiUrl != null && spMiraApiUrl.getSelectedItem() != null) {
+                    settings.put("api_url", spMiraApiUrl.getSelectedItem().toString());
+                }
                 settings.put("api_key", apiKey);
                 settings.put("gate_id", gateId);
-                settings.put("sound_on_scan", cbSoundOnScan.isChecked());
-                settings.put("show_mira_card", cbShowMiraCard.isChecked());
-                settings.put("radar_simulation", cbRadarSimulation.isChecked());
-                settings.put("auto_query_mira", cbAutoQueryMira.isChecked());
+                settings.put("sound_on_scan", cbSoundOnScan != null && cbSoundOnScan.isChecked());
+                settings.put("show_mira_card", cbShowMiraCard != null && cbShowMiraCard.isChecked());
+                settings.put("radar_simulation", cbRadarSimulation != null && cbRadarSimulation.isChecked());
+                settings.put("auto_query_mira", cbAutoQueryMira != null && cbAutoQueryMira.isChecked());
                 settings.put("scan_mode", getSelectedScanMode());
                 settings.put("auto_scan", cbAutoScan != null && cbAutoScan.isChecked());
                 settings.put("auto_open_camera", cbAutoOpenCamera != null && cbAutoOpenCamera.isChecked());
                 settings.put("show_scan_frame", cbShowScanFrame != null && cbShowScanFrame.isChecked());
                 settings.put("parse_gs1", cbParseGS1 != null && cbParseGS1.isChecked());
                 settings.put("vibrate_on_scan", cbVibrateOnScan != null && cbVibrateOnScan.isChecked());
-                settings.put("frequency_mode", spFrequency.getSelectedItemPosition());
-                settings.put("power", spPower.getSelectedItemPosition() + 1);
-                settings.put("link_profile", splinkParams.getSelectedItemPosition());
+                if (spFrequency != null) settings.put("frequency_mode", spFrequency.getSelectedItemPosition());
+                if (spPower != null) settings.put("power", spPower.getSelectedItemPosition() + 1);
+                if (splinkParams != null) settings.put("link_profile", splinkParams.getSelectedItemPosition());
                 
                 body.put("settings", settings);
                 
@@ -620,6 +657,7 @@ editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked(
                 final int code = conn.getResponseCode();
                 
                 mHandler.post(() -> {
+                    if (!isAdded() || getActivity() == null) return;
                     if (code == 200) {
                         Log.d(TAG, "Cloud save successful");
                     } else {
@@ -634,6 +672,7 @@ editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked(
     }
 
     private void loadMiraSettings() {
+        if (mContext == null) return;
         SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
         
         String apiUrl = prefs.getString("mira_api_url", "");
@@ -667,19 +706,20 @@ editor.putString("inventory_sort_location", cbInventorySortByLocation.isChecked(
         if (cbVibrateOnScan != null) cbVibrateOnScan.setChecked(prefs.getBoolean("vibrate_on_scan", true));
 
         // 🟢 تحميل إعدادات الجرد
-if (spInventoryMode != null) {
-    String invMode = prefs.getString("inventory_mode", "Full");
-    for (int i = 0; i < spInventoryMode.getCount(); i++) {
-        if (spInventoryMode.getItemAtPosition(i).toString().equals(invMode)) {
-            spInventoryMode.setSelection(i); break;
+        if (spInventoryMode != null) {
+            String invMode = prefs.getString("inventory_mode", "Full");
+            for (int i = 0; i < spInventoryMode.getCount(); i++) {
+                if (spInventoryMode.getItemAtPosition(i).toString().equals(invMode)) {
+                    spInventoryMode.setSelection(i); break;
+                }
+            }
         }
-    }
-}
-if (cbInventorySound != null) cbInventorySound.setChecked("true".equals(prefs.getString("inventory_sound", "true")));
-if (cbInventoryVibrate != null) cbInventoryVibrate.setChecked("true".equals(prefs.getString("inventory_vibrate", "true")));
-if (cbInventoryAutoStop != null) cbInventoryAutoStop.setChecked("true".equals(prefs.getString("inventory_auto_stop", "false")));
-if (cbInventoryShowImages != null) cbInventoryShowImages.setChecked("true".equals(prefs.getString("inventory_show_images", "false")));
-if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("true".equals(prefs.getString("inventory_sort_location", "true")));
+        if (cbInventorySound != null) cbInventorySound.setChecked("true".equals(prefs.getString("inventory_sound", "true")));
+        if (cbInventoryVibrate != null) cbInventoryVibrate.setChecked("true".equals(prefs.getString("inventory_vibrate", "true")));
+        if (cbInventoryAutoStop != null) cbInventoryAutoStop.setChecked("true".equals(prefs.getString("inventory_auto_stop", "false")));
+        if (cbInventoryShowImages != null) cbInventoryShowImages.setChecked("true".equals(prefs.getString("inventory_show_images", "false")));
+        if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("true".equals(prefs.getString("inventory_sort_location", "true")));
+        
         // 🟢 استعادة نمط العمل
         String workingMode = prefs.getString("working_mode", "mira_yemen");
         if (spWorkingMode != null) {
@@ -695,8 +735,8 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     private void loadSettingsFromCloud() {
         new Thread(() -> {
             try {
-                String gateId = etMiraGateId.getText().toString().trim();
-                String apiKey = etMiraApiKey.getText().toString().trim();
+                String gateId = etMiraGateId != null ? etMiraGateId.getText().toString().trim() : "";
+                String apiKey = etMiraApiKey != null ? etMiraApiKey.getText().toString().trim() : "";
                 
                 if (gateId.isEmpty() || apiKey.isEmpty()) return;
                 
@@ -717,7 +757,10 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
                     JSONObject json = new JSONObject(response.toString());
                     JSONObject cloudSettings = json.getJSONObject("settings");
                     
-                    mHandler.post(() -> applyCloudSettings(cloudSettings));
+                    mHandler.post(() -> {
+                        if (!isAdded() || getActivity() == null) return;
+                        applyCloudSettings(cloudSettings);
+                    });
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Cloud load error: " + e.getMessage());
@@ -727,13 +770,13 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
 
     private void applyCloudSettings(JSONObject settings) {
         try {
-            if (settings.has("sound_on_scan")) 
+            if (settings.has("sound_on_scan") && cbSoundOnScan != null) 
                 cbSoundOnScan.setChecked(settings.getBoolean("sound_on_scan"));
-            if (settings.has("show_mira_card")) 
+            if (settings.has("show_mira_card") && cbShowMiraCard != null) 
                 cbShowMiraCard.setChecked(settings.getBoolean("show_mira_card"));
-            if (settings.has("radar_simulation")) 
+            if (settings.has("radar_simulation") && cbRadarSimulation != null) 
                 cbRadarSimulation.setChecked(settings.getBoolean("radar_simulation"));
-            if (settings.has("auto_query_mira")) 
+            if (settings.has("auto_query_mira") && cbAutoQueryMira != null) 
                 cbAutoQueryMira.setChecked(settings.getBoolean("auto_query_mira"));
             
             // 🟢 إعدادات المسح من السحابة
@@ -750,13 +793,15 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
                 cbVibrateOnScan.setChecked(settings.getBoolean("vibrate_on_scan"));
             
             // إشعار مدير الإعدادات
-            settingsManager.saveSetting("sound_on_scan", cbSoundOnScan.isChecked());
-            settingsManager.saveSetting("show_mira_card", cbShowMiraCard.isChecked());
-            settingsManager.saveSetting("radar_simulation", cbRadarSimulation.isChecked());
-            settingsManager.saveSetting("auto_query_mira", cbAutoQueryMira.isChecked());
-            settingsManager.saveSetting("scan_mode", getSelectedScanMode());
+            if (settingsManager != null) {
+                if (cbSoundOnScan != null) settingsManager.saveSetting("sound_on_scan", cbSoundOnScan.isChecked());
+                if (cbShowMiraCard != null) settingsManager.saveSetting("show_mira_card", cbShowMiraCard.isChecked());
+                if (cbRadarSimulation != null) settingsManager.saveSetting("radar_simulation", cbRadarSimulation.isChecked());
+                if (cbAutoQueryMira != null) settingsManager.saveSetting("auto_query_mira", cbAutoQueryMira.isChecked());
+                settingsManager.saveSetting("scan_mode", getSelectedScanMode());
+            }
             
-            Toast.makeText(mContext, "✅ تم تحميل الإعدادات من MIRA Cloud", Toast.LENGTH_SHORT).show();
+            if (mContext != null) Toast.makeText(mContext, "✅ تم تحميل الإعدادات من MIRA Cloud", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Log.e(TAG, "Apply settings error: " + e.getMessage());
         }
@@ -769,10 +814,11 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     public class MyOnTouchListener implements AdapterView.OnItemSelectedListener {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            if (spFrequency.getSelectedItem().toString().equals(getString(R.string.United_States_Standard))) {
-                rb_America.setChecked(true);
+            if (spFrequency != null && spFrequency.getSelectedItem() != null &&
+                spFrequency.getSelectedItem().toString().equals(getString(R.string.United_States_Standard))) {
+                if (rb_America != null) rb_America.setChecked(true);
             } else if (position != 3) {
-                ll_freHop.setVisibility(View.GONE);
+                if (ll_freHop != null) ll_freHop.setVisibility(View.GONE);
             }
         }
         @Override
@@ -782,6 +828,7 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     public class SetFreOnclickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
+            if (mContext == null || mContext.mReader == null || spFrequency == null) return;
             String strMode = spFrequency.getSelectedItem().toString();
             int mode = getMode(strMode);
             Log.d(TAG, "setFrequencyMode mode=" + mode);
@@ -794,37 +841,41 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     public void getFre(boolean showToast) {
+        if (mContext == null || mContext.mReader == null) return;
         int mode = mContext.mReader.getFrequencyMode();
         Log.e(TAG, "getFrequencyMode()=" + mode);
         mHandler.post(() -> {
-            if (mode != -1) {
+            if (!isAdded() || getActivity() == null) return;
+            if (mode != -1 && spFrequency != null) {
                 int count = spFrequency.getCount();
                 int idx = getModeIndex(mode);
                 spFrequency.setSelection(Math.min(idx, count - 1));
-                if (showToast) mContext.showToast(R.string.uhf_msg_read_frequency_succ);
+                if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_read_frequency_succ);
             } else {
-                if (showToast) mContext.showToast(R.string.uhf_msg_read_frequency_fail);
+                if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_read_frequency_fail);
             }
         });
     }
 
     public void getLinkParams(boolean showToast) {
+        if (mContext == null || mContext.mReader == null) return;
         int link = mContext.mReader.getRFLink();
         Log.e(TAG, "getLinkParams()=" + link);
         mHandler.post(() -> {
+            if (!isAdded() || getActivity() == null) return;
             if (link == -1) {
-                if (showToast) mContext.showToast(R.string.uhf_msg_get_para_fail);
+                if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_get_para_fail);
                 return;
             }
-            if (arrayLinkValue.contains(link)) {
+            if (arrayLinkValue != null && arrayLinkValue.contains(link)) {
                 int index = arrayLinkValue.indexOf(link);
-                if (index < getResources().getStringArray(R.array.arrayLink).length) {
+                if (splinkParams != null && index < getResources().getStringArray(R.array.arrayLink).length) {
                     splinkParams.setSelection(index);
-                    if (showToast) mContext.showToast(R.string.uhf_msg_get_para_succ);
+                    if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_get_para_succ);
                     return;
                 }
             }
-            if (showToast) mContext.showToast("RFLink = " + link);
+            if (showToast && mContext != null) mContext.showToast("RFLink = " + link);
         });
     }
 
@@ -857,6 +908,7 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     private int getModeIndex(String modeName) {
+        if (arrayMode == null) return 0;
         for (int i = 0; i < arrayMode.length; i++) {
             if (arrayMode[i].equals(modeName)) return i;
         }
@@ -877,43 +929,45 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     public class OnMyCheckedChangedListener implements CompoundButton.OnCheckedChangeListener {
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            switch (buttonView.getId()) {
-                case R.id.cbTagFocus:
-                    if (mContext.mReader.setTagFocus(isChecked)) {
-                        cbTagFocus.setText(isChecked ? R.string.tagFocus_off : R.string.tagFocus);
-                        mContext.showToast(R.string.uhf_msg_set_succ);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_set_fail);
-                    }
-                    break;
-                case R.id.cbFastID:
-                    if (mContext.mReader.setFastID(isChecked)) {
-                        cbFastID.setText(isChecked ? R.string.fastID_off : R.string.fastID);
-                        mContext.showToast(R.string.uhf_msg_set_succ);
-                    } else {
-                        mContext.showToast(R.string.uhf_msg_set_fail);
-                    }
-                    break;
+            if (mContext == null || mContext.mReader == null) return;
+            
+            if (buttonView.getId() == R.id.cbTagFocus) {
+                if (mContext.mReader.setTagFocus(isChecked)) {
+                    if (cbTagFocus != null) cbTagFocus.setText(isChecked ? R.string.tagFocus_off : R.string.tagFocus);
+                    mContext.showToast(R.string.uhf_msg_set_succ);
+                } else {
+                    mContext.showToast(R.string.uhf_msg_set_fail);
+                }
+            } else if (buttonView.getId() == R.id.cbFastID) {
+                if (mContext.mReader.setFastID(isChecked)) {
+                    if (cbFastID != null) cbFastID.setText(isChecked ? R.string.fastID_off : R.string.fastID);
+                    mContext.showToast(R.string.uhf_msg_set_succ);
+                } else {
+                    mContext.showToast(R.string.uhf_msg_set_fail);
+                }
             }
         }
     }
 
     public void getPower(boolean showToast) {
+        if (mContext == null || mContext.mReader == null) return;
         int iPower = mContext.mReader.getPower();
         Log.i("UHFSetFragment", "OnClick_GetPower() iPower=" + iPower);
         mHandler.post(() -> {
-            if (iPower > -1) {
+            if (!isAdded() || getActivity() == null) return;
+            if (iPower > -1 && spPower != null) {
                 int position = iPower - 1;
                 int count = spPower.getCount();
                 spPower.setSelection(Math.min(position, count - 1));
-                if (showToast) mContext.showToast(R.string.uhf_msg_read_power_succ);
+                if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_read_power_succ);
             } else {
-                if (showToast) mContext.showToast(R.string.uhf_msg_read_power_fail);
+                if (showToast && mContext != null) mContext.showToast(R.string.uhf_msg_read_power_fail);
             }
         });
     }
 
     public void setPower() {
+        if (mContext == null || mContext.mReader == null || spPower == null) return;
         int iPower = spPower.getSelectedItemPosition() + 1;
         Log.i("UHFSetFragment", "OnClick_SetPower() iPower=" + iPower);
         if (mContext.mReader.setPower(iPower)) {
@@ -924,6 +978,7 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     private boolean setFreHop(float value) {
+        if (mContext == null || mContext.mReader == null) return false;
         boolean result = mContext.mReader.setFreHop(value);
         if (result) {
             mContext.showToast(R.string.uhf_msg_set_frehop_succ);
@@ -935,56 +990,56 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.btnSetFreHop:
+        if (v == null || mContext == null || mContext.mReader == null) return;
+        
+        int id = v.getId();
+        if (id == R.id.btnSetFreHop) {
+            if (spFreHop != null) {
                 View view = spFreHop.getSelectedView();
                 if (view instanceof TextView) {
                     String freHop = ((TextView) view).getText().toString().trim();
                     setFreHop(Float.valueOf(freHop));
                 }
-                break;
-            case R.id.btnSetLinkParams:
+            }
+        } else if (id == R.id.btnSetLinkParams) {
+            if (splinkParams != null && arrayLinkValue != null) {
                 int index = splinkParams.getSelectedItemPosition();
-                int link = arrayLinkValue.get(index);
-                if (mContext.mReader.setRFLink(link)) {
-                    mContext.showToast(R.string.uhf_msg_set_succ);
-                } else {
-                    mContext.showToast(R.string.uhf_msg_set_fail);
+                if (index >= 0 && index < arrayLinkValue.size()) {
+                    int link = arrayLinkValue.get(index);
+                    if (mContext.mReader.setRFLink(link)) {
+                        mContext.showToast(R.string.uhf_msg_set_succ);
+                    } else {
+                        mContext.showToast(R.string.uhf_msg_set_fail);
+                    }
                 }
-                break;
-            case R.id.btnGetLinkParams:
-                getLinkParams(true);
-                break;
-            case R.id.rbEPC:
-                llMemoryBankParams.setVisibility(View.GONE);
-                break;
-            case R.id.btnSetMemoryBank:
-                setMemoryBank();
-                break;
-            case R.id.btnGetMemoryBank:
-                getMomoryBank(true);
-                break;
-            case R.id.btnGetSession:
-                if (getSession()) {
-                    mContext.showToast(R.string.uhf_msg_get_para_succ);
-                } else {
-                    mContext.showToast(R.string.uhf_msg_get_para_fail);
-                }
-                break;
-            case R.id.btnSetSession:
-                setSession();
-                break;
-            default:
-                break;
+            }
+        } else if (id == R.id.btnGetLinkParams) {
+            getLinkParams(true);
+        } else if (id == R.id.rbEPC) {
+            if (llMemoryBankParams != null) llMemoryBankParams.setVisibility(View.GONE);
+        } else if (id == R.id.btnSetMemoryBank) {
+            setMemoryBank();
+        } else if (id == R.id.btnGetMemoryBank) {
+            getMomoryBank(true);
+        } else if (id == R.id.btnGetSession) {
+            if (getSession()) {
+                mContext.showToast(R.string.uhf_msg_get_para_succ);
+            } else {
+                mContext.showToast(R.string.uhf_msg_get_para_fail);
+            }
+        } else if (id == R.id.btnSetSession) {
+            setSession();
         }
     }
 
     private boolean getSession() {
+        if (mContext == null || mContext.mReader == null) return false;
         Gen2Entity entity = mContext.mReader.getGen2();
         if (entity != null) {
             mHandler.post(() -> {
-                spSessionID.setSelection(entity.getQuerySession());
-                spInventoried.setSelection(entity.getQueryTarget());
+                if (!isAdded() || getActivity() == null) return;
+                if (spSessionID != null) spSessionID.setSelection(entity.getQuerySession());
+                if (spInventoried != null) spInventoried.setSelection(entity.getQueryTarget());
             });
             return true;
         }
@@ -992,6 +1047,7 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     private void setSession() {
+        if (mContext == null || mContext.mReader == null || spSessionID == null || spInventoried == null) return;
         int sessionId = spSessionID.getSelectedItemPosition();
         int inventoried = spInventoried.getSelectedItemPosition();
         if (sessionId < 0 || inventoried < 0) return;
@@ -1011,25 +1067,28 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     private void showFrequencyDialog() {
+        if (getActivity() == null) return;
         if (dialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             View view = getActivity().getLayoutInflater().inflate(R.layout.uhf_dialog_frequency, null);
             ListView listView = view.findViewById(R.id.listView_frequency);
             ImageView iv = view.findViewById(R.id.iv_dismissDialog);
-            iv.setOnClickListener(v -> dialog.dismiss());
+            if (iv != null) iv.setOnClickListener(v -> dialog.dismiss());
 
             String[] strArr = getResources().getStringArray(R.array.arrayFreHop);
-            listView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.item_text1, strArr));
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (view instanceof TextView) {
-                        TextView tv = (TextView) view;
-                        setFreHop(Float.valueOf(tv.getText().toString().trim()));
-                        dialog.dismiss();
+            if (listView != null) {
+                listView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.item_text1, strArr));
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        if (view instanceof TextView) {
+                            TextView tv = (TextView) view;
+                            setFreHop(Float.valueOf(tv.getText().toString().trim()));
+                            dialog.dismiss();
+                        }
                     }
-                }
-            });
+                });
+            }
 
             builder.setView(view);
             dialog = builder.create();
@@ -1046,23 +1105,24 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     public int getWindowWidth() {
-        if (metrics == null) {
+        if (metrics == null && getActivity() != null) {
             metrics = new DisplayMetrics();
             getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
         }
-        return metrics.widthPixels;
+        return metrics != null ? metrics.widthPixels : 0;
     }
 
     public int getWindowHeight() {
-        if (metrics == null) {
+        if (metrics == null && getActivity() != null) {
             metrics = new DisplayMetrics();
             getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
         }
-        return metrics.heightPixels;
+        return metrics != null ? metrics.heightPixels : 0;
     }
 
     @OnClick(R.id.rb_America)
     public void onClick_rbAmerica(View view) {
+        if (mContext == null || spFreHop == null) return;
         adapter = ArrayAdapter.createFromResource(mContext, R.array.arrayFreHop_us, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spFreHop.setAdapter(adapter);
@@ -1070,12 +1130,14 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
 
     @OnClick(R.id.rb_Others)
     public void onClick_rbOthers(View view) {
+        if (mContext == null || spFreHop == null) return;
         adapter = ArrayAdapter.createFromResource(mContext, R.array.arrayFreHop, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spFreHop.setAdapter(adapter);
     }
 
     private void getMomoryBank(boolean isToast) {
+        if (mContext == null || mContext.mReader == null) return;
         InventoryModeEntity mode = mContext.mReader.getEPCAndTIDUserMode();
         if (mode == null) {
             if (isToast) mContext.showToast(R.string.get_succ);
@@ -1083,35 +1145,40 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
         }
         int bank = mode.getMode();
         boolean result = false;
-        for (int i = 0; i < arrayMemoryBankValue.length; i++) {
-            if (bank == arrayMemoryBankValue[i]) {
-                final int index = i;
-                mHandler.postDelayed(() -> {
-                    spMemoryBank.setSelection(index);
-                    if (bank == InventoryModeEntity.MODE_EPC_TID_USER) {
-                        etOffset.setText(String.valueOf(mode.getUserOffset()));
-                        etLength.setText(String.valueOf(mode.getUserLength()));
-                    } else if (bank == InventoryModeEntity.MODE_EPC_RESERVED) {
-                        etOffset.setText(String.valueOf(mode.getReservedOffset()));
-                        etLength.setText(String.valueOf(mode.getReservedLength()));
-                    }
-                }, 50);
-                result = true;
-                break;
+        if (arrayMemoryBankValue != null) {
+            for (int i = 0; i < arrayMemoryBankValue.length; i++) {
+                if (bank == arrayMemoryBankValue[i]) {
+                    final int index = i;
+                    mHandler.postDelayed(() -> {
+                        if (!isAdded() || getActivity() == null) return;
+                        if (spMemoryBank != null) spMemoryBank.setSelection(index);
+                        if (bank == InventoryModeEntity.MODE_EPC_TID_USER) {
+                            if (etOffset != null) etOffset.setText(String.valueOf(mode.getUserOffset()));
+                            if (etLength != null) etLength.setText(String.valueOf(mode.getUserLength()));
+                        } else if (bank == InventoryModeEntity.MODE_EPC_RESERVED) {
+                            if (etOffset != null) etOffset.setText(String.valueOf(mode.getReservedOffset()));
+                            if (etLength != null) etLength.setText(String.valueOf(mode.getReservedLength()));
+                        }
+                    }, 50);
+                    result = true;
+                    break;
+                }
             }
         }
-        if (isToast) {
+        if (isToast && mContext != null) {
             mContext.showToast(result ? getString(R.string.get_succ) : getString(R.string.get_fail) + " mode=" + mode.getMode());
         }
     }
 
     private void setMemoryBank() {
+        if (mContext == null || mContext.mReader == null || spMemoryBank == null) return;
+        
         if ((spMemoryBank.getSelectedItemPosition() == 2 || spMemoryBank.getSelectedItemPosition() == 3)) {
-            if (StringUtils.toInt(etOffset.getText().toString().trim(), Integer.MIN_VALUE) == Integer.MIN_VALUE) {
+            if (etOffset == null || StringUtils.toInt(etOffset.getText().toString().trim(), Integer.MIN_VALUE) == Integer.MIN_VALUE) {
                 mContext.showToast(R.string.uhf_msg_offset_error);
                 return;
             }
-            if (StringUtils.toInt(etLength.getText().toString().trim(), Integer.MIN_VALUE) == Integer.MIN_VALUE) {
+            if (etLength == null || StringUtils.toInt(etLength.getText().toString().trim(), Integer.MIN_VALUE) == Integer.MIN_VALUE) {
                 mContext.showToast(R.string.uhf_msg_length_error);
                 return;
             }
@@ -1154,23 +1221,26 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
     }
 
     private void getFastInventory(boolean showToast) {
+        if (mContext == null || mContext.mReader == null) return;
         FastInventoryEntity entity = mContext.mReader.getFastInventoryMode();
         mHandler.post(() -> {
+            if (!isAdded() || getActivity() == null) return;
             if (entity == null || entity.getCr() < 0) {
-                if (showToast) mContext.showToast(R.string.get_fail);
+                if (showToast && mContext != null) mContext.showToast(R.string.get_fail);
                 return;
             }
-            if (entity.getCr() < spFastInventory.getCount()) {
+            if (spFastInventory != null && entity.getCr() < spFastInventory.getCount()) {
                 spFastInventory.setSelection(entity.getCr());
-                if (showToast) mContext.showToast(R.string.get_succ);
+                if (showToast && mContext != null) mContext.showToast(R.string.get_succ);
             } else {
-                if (showToast) mContext.showToast("Cr = " + entity.getCr());
+                if (showToast && mContext != null) mContext.showToast("Cr = " + entity.getCr());
             }
         });
     }
 
     @OnClick(R.id.btnSetFastInventory)
     public void setFastInventory(View view) {
+        if (mContext == null || mContext.mReader == null || spFastInventory == null) return;
         FastInventoryEntity entity = new FastInventoryEntity(spFastInventory.getSelectedItemPosition());
         boolean flag = mContext.mReader.setFastInventoryMode(entity);
         mContext.showToast(flag ? R.string.setting_succ : R.string.setting_fail);
@@ -1178,11 +1248,12 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
 
     @OnClick(R.id.btnFactoryReset)
     public void btnFactoryResetClick(View view) {
+        if (mContext == null) return;
         new AlertDialog.Builder(mContext)
             .setTitle("⚠️ تأكيد إعادة الضبط")
             .setMessage("سيتم:\n• إعادة ضبط إعدادات القارئ\n• مسح إعدادات MIRA المحلية\n• استعادة الإعدادات الافتراضية\n\nهل أنت متأكد؟")
             .setPositiveButton("نعم، إعادة الضبط", (dialog, which) -> {
-                boolean rfidReset = mContext.mReader.factoryReset();
+                boolean rfidReset = mContext.mReader != null && mContext.mReader.factoryReset();
                 
                 SharedPreferences prefs = mContext.getSharedPreferences("MIRA_BRIDGE_SETTINGS", Context.MODE_PRIVATE);
                 prefs.edit().clear().apply();
@@ -1199,12 +1270,12 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
                         getFastInventory(false);
                     }).start();
                     
-                    etMiraApiKey.setText("mira_gate_test071234567890abcdefghijklmnop");
-                    etMiraGateId.setText("handheld_c72");
-                    cbSoundOnScan.setChecked(true);
-                    cbShowMiraCard.setChecked(true);
-                    cbRadarSimulation.setChecked(true);
-                    cbAutoQueryMira.setChecked(true);
+                    if (etMiraApiKey != null) etMiraApiKey.setText("mira_gate_test071234567890abcdefghijklmnop");
+                    if (etMiraGateId != null) etMiraGateId.setText("handheld_c72");
+                    if (cbSoundOnScan != null) cbSoundOnScan.setChecked(true);
+                    if (cbShowMiraCard != null) cbShowMiraCard.setChecked(true);
+                    if (cbRadarSimulation != null) cbRadarSimulation.setChecked(true);
+                    if (cbAutoQueryMira != null) cbAutoQueryMira.setChecked(true);
                     if (spWorkingMode != null) spWorkingMode.setSelection(0);
                     if (rbRfidMode != null) rbRfidMode.setChecked(true);
                     if (cbAutoScan != null) cbAutoScan.setChecked(false);
@@ -1220,4 +1291,4 @@ if (cbInventorySortByLocation != null) cbInventorySortByLocation.setChecked("tru
             .setNegativeButton("إلغاء", null)
             .show();
     }
-                    }
+}
