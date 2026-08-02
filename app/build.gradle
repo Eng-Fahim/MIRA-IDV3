@@ -28,6 +28,13 @@ android {
 }
 
 dependencies {
+    // 🔗 ربط وحدات MIRA الجديدة
+    implementation project(':mira-core')
+    implementation project(':mira-rfid')
+    implementation project(':mira-inventory')
+    implementation project(':mira-ui')
+
+    // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.cardview:cardview:1.0.0'
