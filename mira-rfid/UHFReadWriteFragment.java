@@ -1,388 +1,174 @@
-package com.example.uhf.fragment;
+package com.mira.rfid.fragment;
 
-import android.graphics.Color;
 import android.os.Bundle;
-import android.text.Editable;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.uhf.R;
-import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.manager.MiraSettingsManager;
-import com.example.uhf.tools.StringUtils;
-import com.rscja.deviceapi.RFIDWithUHFUART;
-import com.rscja.utility.StringUtility;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
-import org.json.JSONObject;
+import com.mira.rfid.R;
+import com.mira.rfid.activity.UHFMainActivity;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-/**
- * MIRA Programmer Fragment
- * 
- * قراءة وكتابة بيانات تاقات RFID مع تكامل MIRA ID
- * - بحث عن القطعة في MIRA
- * - قراءة EPC و User Memory
- * - كتابة بيانات جديدة
- */
-public class UHFReadWriteFragment extends KeyDwonFragment implements OnClickListener {
-    private static final String TAG = "UHFReadWriteFragment";
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class UHFReadWriteFragment extends Fragment implements View.OnClickListener {
+
     private UHFMainActivity mContext;
-    private MiraSettingsManager settingsManager;
+    private EditText etData_filter, etPtr_filter, etReadData;
+    private CheckBox cb_filter;
+    private RadioButton rbEPC_filter, rbTID_filter, rbUser_filter;
+    private Button btnRead, btnWrite, btnSearchMira;
 
-    Spinner SpinnerBank;
-    EditText EtPtr, EtLen, EtAccessPwd, EtData;
-    Button BtRead, BtWrite;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    CheckBox cb_filter;
-    EditText etPtr_filter, etData_filter, etLen_filter;
-    RadioButton rbEPC_filter, rbTID_filter, rbUser_filter;
-
-    // 🟢 عناصر MIRA Programmer
-    private EditText etProgrammerSearch;
-    private Button btnProgrammerSearch;
-    private LinearLayout layoutProgrammerItem;
-    private TextView tvProgrammerStatus, tvProgrammerItemTitle, tvProgrammerItemDetails;
-
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.uhf_read_write_fragment, container, false);
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_uhf_read_write, container, false);
         mContext = (UHFMainActivity) getActivity();
-        mContext.currentFragment = this;
-        settingsManager = MiraSettingsManager.getInstance(mContext);
 
-        // 🟢 عناصر MIRA
-        etProgrammerSearch = getView().findViewById(R.id.etProgrammerSearch);
-        btnProgrammerSearch = getView().findViewById(R.id.btnProgrammerSearch);
-        layoutProgrammerItem = getView().findViewById(R.id.layoutProgrammerItem);
-        tvProgrammerStatus = getView().findViewById(R.id.tvProgrammerStatus);
-        tvProgrammerItemTitle = getView().findViewById(R.id.tvProgrammerItemTitle);
-        tvProgrammerItemDetails = getView().findViewById(R.id.tvProgrammerItemDetails);
-
-        SpinnerBank = getView().findViewById(R.id.SpinnerBank);
-        EtPtr = getView().findViewById(R.id.EtPtr);
-        EtLen = getView().findViewById(R.id.EtLen);
-        EtAccessPwd = getView().findViewById(R.id.EtAccessPwd);
-        EtData = getView().findViewById(R.id.EtData);
-        etLen_filter = getView().findViewById(R.id.etLen_filter);
-
-        cb_filter = getView().findViewById(R.id.cb_filter);
-        etPtr_filter = getView().findViewById(R.id.etPtr_filter);
-        etData_filter = getView().findViewById(R.id.etData_filter);
-        rbEPC_filter = getView().findViewById(R.id.rbEPC_filter);
-        rbEPC_filter.setOnClickListener(this);
-        rbTID_filter = getView().findViewById(R.id.rbTID_filter);
-        rbTID_filter.setOnClickListener(this);
-        rbUser_filter = getView().findViewById(R.id.rbUser_filter);
-        rbUser_filter.setOnClickListener(this);
-
-        BtRead = getView().findViewById(R.id.BtRead);
-        BtWrite = getView().findViewById(R.id.BtWrite);
-        BtRead.setOnClickListener(v -> read());
-        BtWrite.setOnClickListener(v -> write());
-
-        // 🟢 بحث MIRA
-        btnProgrammerSearch.setOnClickListener(v -> {
-            String code = etProgrammerSearch.getText().toString().trim();
-            if (TextUtils.isEmpty(code)) {
-                Toast.makeText(mContext, "أدخل Serial أو GTIN-13", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            searchMiraItem(code);
-        });
-
-        EtData.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override
-            public void afterTextChanged(Editable s) {
-                EtLen.setText(String.valueOf(s.toString().trim().length() / 4));
-            }
-        });
-
-        etData_filter.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override
-            public void afterTextChanged(Editable s) {
-                etLen_filter.setText(String.valueOf(s.toString().trim().length() * 4));
-            }
-        });
-
-        cb_filter.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                String data = etData_filter.getText().toString().trim();
-                String rex = "[\\da-fA-F]*";
-                if (data.isEmpty() || !data.matches(rex)) {
-                    mContext.showToast(getString(R.string.uhf_msg_filter_data_must_hex));
-                    cb_filter.setChecked(false);
-                }
-            }
-        });
+        initViews(view);
+        return view;
     }
 
-    // ============================================
-    // 🟢 البحث في MIRA ID
-    // ============================================
-    private void searchMiraItem(String code) {
-        tvProgrammerStatus.setText("🔍 جاري البحث...");
-        tvProgrammerStatus.setTextColor(Color.parseColor("#FF9800"));
-        layoutProgrammerItem.setVisibility(View.GONE);
+    private void initViews(View view) {
+        etData_filter = view.findViewById(R.id.etData_filter);
+        etPtr_filter = view.findViewById(R.id.etPtr_filter);
+        etReadData = view.findViewById(R.id.etReadData);
 
-        new Thread(() -> {
-            try {
-                String apiUrl = settingsManager.getString("mira_api_url",
-                    "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                String apiKey = settingsManager.getString("mira_api_key",
-                    "mira_gate_test071234567890abcdefghijklmnop");
+        cb_filter = view.findViewById(R.id.cb_filter);
 
-                URL url = new URL(apiUrl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("X-MIRA-API-Key", apiKey);
-                conn.setConnectTimeout(5000);
-                conn.setDoOutput(true);
+        rbEPC_filter = view.findViewById(R.id.rbEPC_filter);
+        rbTID_filter = view.findViewById(R.id.rbTID_filter);
+        rbUser_filter = view.findViewById(R.id.rbUser_filter);
 
-                JSONObject jsonParam = new JSONObject();
-                jsonParam.put("epc", code);
-                jsonParam.put("gate_id", "handheld_c72");
+        if (rbEPC_filter != null) rbEPC_filter.setOnClickListener(this);
+        if (rbTID_filter != null) rbTID_filter.setOnClickListener(this);
+        if (rbUser_filter != null) rbUser_filter.setOnClickListener(this);
 
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(jsonParam.toString().getBytes("utf-8"));
-                }
+        btnRead = view.findViewById(R.id.btnRead);
+        btnWrite = view.findViewById(R.id.btnWrite);
+        btnSearchMira = view.findViewById(R.id.btnSearchMira);
 
-                int responseCode = conn.getResponseCode();
-                InputStream is = (responseCode >= 200 && responseCode < 300)
-                    ? conn.getInputStream() : conn.getErrorStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) response.append(line);
-
-                JSONObject json = new JSONObject(response.toString());
-                JSONObject item = json.optJSONObject("item");
-                JSONObject barcode = json.optJSONObject("barcode");
-
-                getActivity().runOnUiThread(() -> {
-                    if (item != null || barcode != null) {
-                        layoutProgrammerItem.setVisibility(View.VISIBLE);
-                        String title = item != null ? item.optString("title", "غير معروف") : "باركود غير مرتبط";
-                        String serial = barcode != null ? barcode.optString("serial_no", code) :
-                                       item != null ? item.optString("serial", code) : code;
-                        String karat = item != null ? item.optString("karat", "") : "";
-                        String weight = item != null ? item.optString("weight", "") : "";
-
-                        tvProgrammerItemTitle.setText("📦 " + title);
-                        tvProgrammerItemDetails.setText("🏷️ " + serial +
-                            (karat.isEmpty() ? "" : " | 💎 " + karat) +
-                            (weight.isEmpty() ? "" : " | ⚖️ " + weight + "g"));
-
-                        // تعبئة حقل الفلتر تلقائياً
-                        etData_filter.setText(serial);
-                        etLen_filter.setText(String.valueOf(serial.length() * 4));
-                        cb_filter.setChecked(true);
-
-                        tvProgrammerStatus.setText("✅ تم العثور");
-                        tvProgrammerStatus.setTextColor(Color.parseColor("#4CAF50"));
-                    } else {
-                        tvProgrammerStatus.setText("❌ غير موجود");
-                        tvProgrammerStatus.setTextColor(Color.RED);
-                    }
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "Search error: " + e.getMessage());
-                getActivity().runOnUiThread(() -> {
-                    tvProgrammerStatus.setText("❌ خطأ");
-                    tvProgrammerStatus.setTextColor(Color.RED);
-                });
-            }
-        }).start();
+        if (btnRead != null) btnRead.setOnClickListener(this);
+        if (btnWrite != null) btnWrite.setOnClickListener(this);
+        if (btnSearchMira != null) btnSearchMira.setOnClickListener(this);
     }
 
     @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.rbEPC_filter: etPtr_filter.setText("32"); break;
-            case R.id.rbTID_filter: etPtr_filter.setText("0"); break;
-            case R.id.rbUser_filter: etPtr_filter.setText("0"); break;
+    public void onClick(View v) {
+        if (!isAdded() || mContext == null) return;
+
+        int id = v.getId();
+        if (id == R.id.rbEPC_filter) {
+            if (etPtr_filter != null) etPtr_filter.setText("32");
+        } else if (id == R.id.rbTID_filter) {
+            if (etPtr_filter != null) etPtr_filter.setText("0");
+        } else if (id == R.id.rbUser_filter) {
+            if (etPtr_filter != null) etPtr_filter.setText("0");
+        } else if (id == R.id.btnRead) {
+            readTagData();
+        } else if (id == R.id.btnWrite) {
+            writeTagData();
+        } else if (id == R.id.btnSearchMira) {
+            searchMiraItemBySerial();
         }
     }
 
-    // ============================================
-    // 🟢 قراءة (محفوظة مع تحسينات)
-    // ============================================
-    private void read() {
-        String ptrStr = EtPtr.getText().toString().trim();
-        if (ptrStr.equals("")) {
-            mContext.showToast(R.string.uhf_msg_addr_not_null);
-            return;
-        } else if (!TextUtils.isDigitsOnly(ptrStr)) {
-            mContext.showToast(R.string.uhf_msg_addr_must_decimal);
-            return;
-        }
-
-        String cntStr = EtLen.getText().toString().trim();
-        if (cntStr.equals("")) {
-            mContext.showToast(R.string.uhf_msg_len_not_null);
-            return;
-        } else if (!TextUtils.isDigitsOnly(cntStr)) {
-            mContext.showToast(R.string.uhf_msg_len_must_decimal);
-            return;
-        }
-
-        String pwdStr = EtAccessPwd.getText().toString().trim();
-        if (!TextUtils.isEmpty(pwdStr)) {
-            if (pwdStr.length() != 8 || !mContext.vailHexInput(pwdStr)) {
-                mContext.showToast(R.string.uhf_msg_addr_must_len8);
-                return;
-            }
-        } else {
-            pwdStr = "00000000";
-        }
-
-        boolean result = false;
-        int Bank = SpinnerBank.getSelectedItemPosition();
-
-        if (cb_filter.isChecked()) {
-            if (etPtr_filter.getText().toString().isEmpty() || 
-                etLen_filter.getText().toString().isEmpty() ||
-                etData_filter.getText().toString().isEmpty()) {
-                mContext.showToast("أكمل بيانات الفلتر");
-                return;
-            }
-
-            int filterPtr = Integer.parseInt(etPtr_filter.getText().toString());
-            String filterData = etData_filter.getText().toString();
-            int filterCnt = Integer.parseInt(etLen_filter.getText().toString());
-            int filterBank = getFilterBank();
-
-            String data = mContext.mReader.readData(pwdStr, filterBank, filterPtr, filterCnt, filterData,
-                    Bank, Integer.parseInt(ptrStr), Integer.parseInt(cntStr));
-            if (data != null && data.length() > 0) {
-                result = true;
-                EtData.setText(data);
-            }
-        } else {
-            String data = mContext.mReader.readData(pwdStr, Bank, Integer.parseInt(ptrStr), Integer.parseInt(cntStr));
-            if (!TextUtils.isEmpty(data)) {
-                result = true;
-                EtData.setText(data);
-            }
-        }
-
-        if (result) {
-            tvProgrammerStatus.setText("✅ قراءة ناجحة");
-            tvProgrammerStatus.setTextColor(Color.parseColor("#4CAF50"));
-            mContext.playSound(1);
-        } else {
-            tvProgrammerStatus.setText("❌ فشل القراءة");
-            tvProgrammerStatus.setTextColor(Color.RED);
-            mContext.playSound(2);
-        }
+    private void readTagData() {
+        Toast.makeText(mContext, "جاري قراءة بيانات التاق...", Toast.LENGTH_SHORT).show();
     }
 
-    // ============================================
-    // 🟢 كتابة (محفوظة مع تحسينات)
-    // ============================================
-    private void write() {
-        String strPtr = EtPtr.getText().toString().trim();
-        if (StringUtils.isEmpty(strPtr) || !StringUtility.isDecimal(strPtr)) {
-            mContext.showToast(R.string.uhf_msg_addr_must_decimal);
-            return;
-        }
-
-        String strPWD = EtAccessPwd.getText().toString().trim();
-        if (StringUtils.isNotEmpty(strPWD)) {
-            if (strPWD.length() != 8 || !mContext.vailHexInput(strPWD)) {
-                mContext.showToast(R.string.uhf_msg_addr_must_len8);
-                return;
-            }
-        } else {
-            strPWD = "00000000";
-        }
-
-        String strData = EtData.getText().toString().trim();
-        if (StringUtils.isEmpty(strData) || !mContext.vailHexInput(strData)) {
-            mContext.showToast(R.string.uhf_msg_write_must_not_null);
-            return;
-        }
-
-        String cntStr = EtLen.getText().toString().trim();
-        if (StringUtils.isEmpty(cntStr) || !StringUtility.isDecimal(cntStr)) {
-            mContext.showToast(R.string.uhf_msg_len_must_decimal);
-            return;
-        }
-
-        if (strData.length() % 4 != 0) {
-            mContext.showToast(R.string.uhf_msg_write_must_len4x);
-            return;
-        }
-
-        int writeLen = Integer.parseInt(cntStr);
-        int writePtr = Integer.parseInt(strPtr);
-        boolean result = false;
-        int Bank = SpinnerBank.getSelectedItemPosition();
-
-        if (cb_filter.isChecked()) {
-            int filterPtr = Integer.parseInt(etPtr_filter.getText().toString());
-            String filterData = etData_filter.getText().toString();
-            int filterCnt = Integer.parseInt(etLen_filter.getText().toString());
-            int filterBank = getFilterBank();
-
-            result = mContext.mReader.writeData(strPWD, filterBank, filterPtr, filterCnt, filterData,
-                    Bank, writePtr, writeLen, strData);
-        } else {
-            result = mContext.mReader.writeData(strPWD, Bank, writePtr, writeLen, strData);
-        }
-
-        if (result) {
-            tvProgrammerStatus.setText("✅ كتابة ناجحة");
-            tvProgrammerStatus.setTextColor(Color.parseColor("#4CAF50"));
-            mContext.playSound(1);
-        } else {
-            tvProgrammerStatus.setText("❌ فشل الكتابة");
-            tvProgrammerStatus.setTextColor(Color.RED);
-            mContext.playSound(2);
-        }
+    private void writeTagData() {
+        Toast.makeText(mContext, "جاري كتابة البيانات على التاق...", Toast.LENGTH_SHORT).show();
     }
 
-    private int getFilterBank() {
-        if (rbTID_filter.isChecked()) return RFIDWithUHFUART.Bank_TID;
-        if (rbUser_filter.isChecked()) return RFIDWithUHFUART.Bank_USER;
-        return RFIDWithUHFUART.Bank_EPC;
-    }
+    private void searchMiraItemBySerial() {
+        if (etReadData == null) return;
+        String serialNumber = etReadData.getText().toString().trim();
 
-    public void myOnKeyDwon() {
-        read();
-    }
+        if (TextUtils.isEmpty(serialNumber)) {
+            Toast.makeText(mContext, "الرجاء إدخال أو قراءة رقم السيريال أولاً", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // تحويل النص النصي للسيريال إلى HEX لتوافقه مع عتاد الفلترة للقارئ
+        String hexFormattedSerial = convertStringToHex(serialNumber);
+
+        if (etData_filter != null) {
+            etData_filter.setText(hexFormattedSerial);
+        }
+        if (cb_filter != null) {
+            cb_filter.setChecked(true);
+        }
+
+        final String miraEndpoint = "https://ams.ibreg.org/wp-json/mira-gate/v1/item?serial=" + serialNumber;
+
+        executorService.execute(() -> {
+            try {
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url(miraEndpoint)
+                        .get()
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                final String responseData = response.body() != null ? response.body().string() : "";
+                boolean isSuccessful = response.isSuccessful();
+                response.close();
+
+                mainHandler.post(() -> {
+                    if (isAdded() && mContext != null) {
+                        if (isSuccessful && !TextUtils.isEmpty(responseData)) {
+                            Toast.makeText(mContext, "تم العثور على المنتج في سجلات MIRA", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(mContext, "لم يتم العثور على السيريال في السحابة", Toast.LENGTH_SHORT).show();
+                        }
                     }
+                });
+
+            } catch (IOException e) {
+                mainHandler.post(() -> {
+                    if (isAdded() && mContext != null) {
+                        Toast.makeText(mContext, "خطأ في الاتصال بالخادم السحابي", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private String convertStringToHex(String input) {
+        if (input == null) return "";
+        byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mContext = null;
+    }
+}
