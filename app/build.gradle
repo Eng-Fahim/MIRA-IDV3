@@ -26,13 +26,16 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 }
-
 dependencies {
-    // 🔗 ربط وحدات MIRA الجديدة
+    // 1. ربط وحدات المشروع الداخلية
     implementation project(':mira-core')
-    implementation project(':mira-rfid')
     implementation project(':mira-inventory')
+    implementation project(':mira-rfid')
     implementation project(':mira-ui')
+
+    // 2. ربط مكتبات الـ RFID (سواء كانت ملفات jar محلية في مجلد libs)
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+
 
     // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
