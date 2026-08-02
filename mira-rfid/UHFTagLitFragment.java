@@ -1,4 +1,4 @@
-package com.example.uhf.fragment;
+package com.mira.rfid.fragment;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -16,6 +16,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -63,19 +65,20 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     private MiraSettingsManager settingsManager;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final List<UHFTAGInfo> tagList = new ArrayList<>();
-    private boolean inventoryFlag = false;
+    private volatile boolean inventoryFlag = false;
     private InventoryModeEntity inventoryMode = null;
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         context = (UHFMainActivity) getActivity();
+        if (context == null) return;
         context.currentFragment = this;
         settingsManager = MiraSettingsManager.getInstance(context);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_uhf_tag_led, container, false);
         initView(view);
         return view;
@@ -90,17 +93,27 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     public void onStart() {
         super.onStart();
 
+        if (context == null) return;
+
         handler.postDelayed(() -> {
+            if (!isAdded() || context == null || context.mReader == null) return;
             context.mReader.setInventoryCallback(uhftagInfo -> {
-                handler.post(() -> adapter.addTagInfo(uhftagInfo));
-                context.playSound(1);
+                handler.post(() -> {
+                    if (!isAdded() || adapter == null) return;
+                    adapter.addTagInfo(uhftagInfo);
+                    if (context != null) {
+                        context.playSound(1);
+                    }
+                });
             });
         }, 400);
 
-        if (context != null && context.mReader.getConnectStatus() == ConnectionStatus.CONNECTED) {
+        if (context.mReader != null && context.mReader.getConnectStatus() == ConnectionStatus.CONNECTED) {
             new Thread(() -> {
                 SystemClock.sleep(100);
-                inventoryMode = context.mReader.getEPCAndTIDUserMode();
+                if (context != null && context.mReader != null) {
+                    inventoryMode = context.mReader.getEPCAndTIDUserMode();
+                }
             }).start();
         }
     }
@@ -109,20 +122,29 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     public void onStop() {
         super.onStop();
 
-        if (context != null && context.mReader.getConnectStatus() == ConnectionStatus.CONNECTED) {
-            new Thread(() -> {
-                SystemClock.sleep(100);
-                if (inventoryFlag) {
-                    context.mReader.stopInventory();
-                    inventoryFlag = false;
-                    cbTagLed.setEnabled(true);
-                    btnInventory.setText("💡 ابدأ الإضاءة");
-                }
-                if (inventoryMode != null) {
-                    context.mReader.setEPCAndTIDUserMode(inventoryMode);
-                }
-                context.mReader.setFilter(0, 0, 0, "");
-            }).start();
+        if (context != null && context.mReader != null) {
+            // إزالة الـ Callback عند توقف الفراغمنت لعدم حدوث Leak
+            context.mReader.setInventoryCallback(null);
+
+            if (context.mReader.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                new Thread(() -> {
+                    SystemClock.sleep(100);
+                    if (context == null || context.mReader == null) return;
+
+                    if (inventoryFlag) {
+                        context.mReader.stopInventory();
+                        inventoryFlag = false;
+                        handler.post(() -> {
+                            if (cbTagLed != null) cbTagLed.setEnabled(true);
+                            if (btnInventory != null) btnInventory.setText("💡 ابدأ الإضاءة");
+                        });
+                    }
+                    if (inventoryMode != null) {
+                        context.mReader.setEPCAndTIDUserMode(inventoryMode);
+                    }
+                    context.mReader.setFilter(0, 0, 0, "");
+                }).start();
+            }
         }
     }
 
@@ -136,30 +158,36 @@ public class UHFTagLitFragment extends KeyDwonFragment {
         tvSpotlightCount = view.findViewById(R.id.tvSpotlightCount);
         tvEmptySpotlight = view.findViewById(R.id.tvEmptySpotlight);
 
-        btnInventory.setOnClickListener(v -> toggleInventory());
-        btnClear.setOnClickListener(v -> toggleClear());
+        if (btnInventory != null) btnInventory.setOnClickListener(v -> toggleInventory());
+        if (btnClear != null) btnClear.setOnClickListener(v -> toggleClear());
 
         // 🟢 إضافة قطعة من MIRA ID
-        btnAddToSpotlight.setOnClickListener(v -> {
-            String code = etSpotlightSearch.getText().toString().trim();
-            if (TextUtils.isEmpty(code)) {
-                Toast.makeText(context, "أدخل Serial أو GTIN-13", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            searchAndAddItem(code);
-        });
+        if (btnAddToSpotlight != null) {
+            btnAddToSpotlight.setOnClickListener(v -> {
+                if (etSpotlightSearch == null) return;
+                String code = etSpotlightSearch.getText().toString().trim();
+                if (TextUtils.isEmpty(code)) {
+                    Toast.makeText(context, "أدخل Serial أو GTIN-13", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                searchAndAddItem(code);
+            });
+        }
 
         adapter = new TagLedAdapter(tagList);
         adapter.setTagLedClickListener((position, isChecked) -> {
             if (inventoryFlag) {
-                context.showToast("أوقف الإضاءة أولاً");
+                if (context != null) context.showToast("أوقف الإضاءة أولاً");
                 return false;
             }
             return true;
         });
-        rvTagLed.setAdapter(adapter);
-        rvTagLed.setLayoutManager(new LinearLayoutManager(getContext()));
-        
+
+        if (rvTagLed != null) {
+            rvTagLed.setAdapter(adapter);
+            rvTagLed.setLayoutManager(new LinearLayoutManager(getContext()));
+        }
+
         updateEmptyState();
     }
 
@@ -167,19 +195,22 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     // 🟢 البحث في MIRA ID وإضافة القطعة
     // ============================================
     private void searchAndAddItem(String code) {
-        Toast.makeText(context, "🔍 جاري البحث...", Toast.LENGTH_SHORT).show();
-        
+        if (context != null) Toast.makeText(context, "🔍 جاري البحث...", Toast.LENGTH_SHORT).show();
+
         new Thread(() -> {
             try {
-                String apiUrl = settingsManager.getString("mira_api_url",
-                    "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize");
-                String apiKey = settingsManager.getString("mira_api_key",
-                    "mira_gate_test071234567890abcdefghijklmnop");
+                String apiUrl = "https://ams.ibreg.org/wp-json/mira-gate/v1/authorize";
+                String apiKey = "mira_gate_test071234567890abcdefghijklmnop";
+
+                if (settingsManager != null) {
+                    apiUrl = settingsManager.getString("mira_api_url", apiUrl);
+                    apiKey = settingsManager.getString("mira_api_key", apiKey);
+                }
 
                 URL url = new URL(apiUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 conn.setRequestProperty("X-MIRA-API-Key", apiKey);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
@@ -206,18 +237,20 @@ public class UHFTagLitFragment extends KeyDwonFragment {
                 JSONObject barcode = json.optJSONObject("barcode");
 
                 handler.post(() -> {
+                    if (!isAdded() || getActivity() == null) return;
+
                     if (item != null || barcode != null) {
-                        String serial = barcode != null ? barcode.optString("serial_no", code) : 
+                        String serial = barcode != null ? barcode.optString("serial_no", code) :
                                        item != null ? item.optString("serial", code) : code;
                         String title = item != null ? item.optString("title", "غير معروف") : "باركود غير مرتبط";
-                        String epc = serial; // استخدام serial كـ EPC
+                        String epc = serial;
 
                         // إنشاء UHFTAGInfo للقائمة
                         UHFTAGInfo tagInfo = new UHFTAGInfo();
                         tagInfo.setEPC(epc);
                         tagInfo.setExtraData("TITLE", title);
                         tagInfo.setExtraData("SERIAL", serial);
-                        tagInfo.setExtraData("CHECKED", "1"); // محدد افتراضياً
+                        tagInfo.setExtraData("CHECKED", "1");
                         tagInfo.setExtraData("STATE", "0");
 
                         // التحقق من عدم التكرار
@@ -231,9 +264,9 @@ public class UHFTagLitFragment extends KeyDwonFragment {
 
                         if (!exists) {
                             tagList.add(tagInfo);
-                            adapter.notifyItemInserted(tagList.size() - 1);
+                            if (adapter != null) adapter.notifyItemInserted(tagList.size() - 1);
                             updateEmptyState();
-                            etSpotlightSearch.setText("");
+                            if (etSpotlightSearch != null) etSpotlightSearch.setText("");
                             Toast.makeText(context, "✅ تمت إضافة: " + title, Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(context, "⚠️ القطعة موجودة بالفعل", Toast.LENGTH_SHORT).show();
@@ -245,7 +278,10 @@ public class UHFTagLitFragment extends KeyDwonFragment {
 
             } catch (Exception e) {
                 Log.e(TAG, "Search error: " + e.getMessage());
-                handler.post(() -> Toast.makeText(context, "❌ خطأ في البحث", Toast.LENGTH_SHORT).show());
+                handler.post(() -> {
+                    if (!isAdded() || getActivity() == null) return;
+                    Toast.makeText(context, "❌ خطأ في الاتصال بالسيرفر", Toast.LENGTH_SHORT).show();
+                });
             }
         }).start();
     }
@@ -260,9 +296,13 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     }
 
     private void toggleClear() {
-        adapter.clear();
+        if (inventoryFlag) {
+            if (context != null) context.showToast("أوقف الإضاءة أولاً");
+            return;
+        }
+        if (adapter != null) adapter.clear();
         updateEmptyState();
-        Toast.makeText(context, "🗑️ تم مسح القائمة", Toast.LENGTH_SHORT).show();
+        if (context != null) Toast.makeText(context, "🗑️ تم مسح القائمة", Toast.LENGTH_SHORT).show();
     }
 
     private void toggleInventory() {
@@ -270,7 +310,7 @@ public class UHFTagLitFragment extends KeyDwonFragment {
             stopInventory();
         } else {
             if (tagList.isEmpty()) {
-                Toast.makeText(context, "⚠️ أضف قطعاً للإضاءة أولاً", Toast.LENGTH_SHORT).show();
+                if (context != null) Toast.makeText(context, "⚠️ أضف قطعاً للإضاءة أولاً", Toast.LENGTH_SHORT).show();
                 return;
             }
             startInventory();
@@ -278,18 +318,21 @@ public class UHFTagLitFragment extends KeyDwonFragment {
     }
 
     private void startInventory() {
+        if (context == null || context.mReader == null) return;
+
         List<FilterEntity> filterList = new ArrayList<>();
         for (int i = 0; i < tagList.size(); i++) {
             UHFTAGInfo uhftagInfo = tagList.get(i);
             if (Objects.equals(uhftagInfo.getExtraData("STATE"), "1")) {
                 uhftagInfo.setExtraData("STATE", "0");
-                adapter.notifyItemChanged(i);
+                if (adapter != null) adapter.notifyItemChanged(i);
             }
-            if (Objects.equals(uhftagInfo.getExtraData("CHECKED"), "1")) {
+            if (Objects.equals(uhftagInfo.getExtraData("CHECKED"), "1") && !TextUtils.isEmpty(uhftagInfo.getEPC())) {
+                String epcHex = uhftagInfo.getEPC().trim();
                 FilterEntity filterEntity = new FilterEntity(
                     IUHF.Bank_EPC, 32,
-                    uhftagInfo.getEPC().length() * 4,
-                    uhftagInfo.getEPC()
+                    epcHex.length() * 4,
+                    epcHex
                 );
                 filterList.add(filterEntity);
             }
@@ -305,9 +348,10 @@ public class UHFTagLitFragment extends KeyDwonFragment {
             return;
         }
 
+        boolean isLedChecked = cbTagLed != null && cbTagLed.isChecked();
         if (!context.mReader.setEPCAndTIDUserMode(
                 new InventoryModeEntity.Builder()
-                    .setMode(cbTagLed.isChecked() ? InventoryModeEntity.MODE_LED_TAG : InventoryModeEntity.MODE_EPC)
+                    .setMode(isLedChecked ? InventoryModeEntity.MODE_LED_TAG : InventoryModeEntity.MODE_EPC)
                     .build()
         )) {
             context.showToast(R.string.fail);
@@ -316,19 +360,33 @@ public class UHFTagLitFragment extends KeyDwonFragment {
 
         if (context.mReader.startInventoryTag()) {
             inventoryFlag = true;
-            cbTagLed.setEnabled(false);
-            btnInventory.setText("⏹ إيقاف الإضاءة");
-            btnInventory.setBackgroundColor(Color.parseColor("#F44336"));
+            if (cbTagLed != null) cbTagLed.setEnabled(false);
+            if (btnInventory != null) {
+                btnInventory.setText("⏹ إيقاف الإضاءة");
+                btnInventory.setBackgroundColor(Color.parseColor("#F44336"));
+            }
             Toast.makeText(context, "💡 جاري إضاءة " + filterList.size() + " قطعة...", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void stopInventory() {
+        if (context == null || context.mReader == null) return;
+
         if (context.mReader.stopInventory()) {
             inventoryFlag = false;
-            cbTagLed.setEnabled(true);
-            btnInventory.setText("💡 ابدأ الإضاءة");
-            btnInventory.setBackgroundColor(Color.parseColor("#FF9800"));
+            if (cbTagLed != null) cbTagLed.setEnabled(true);
+            if (btnInventory != null) {
+                btnInventory.setText("💡 ابدأ الإضاءة");
+                btnInventory.setBackgroundColor(Color.parseColor("#FF9800"));
+            }
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (inventoryFlag) {
+            stopInventory();
         }
     }
 }
