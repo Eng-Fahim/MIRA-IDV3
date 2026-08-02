@@ -13,4 +13,10 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "MIRA-IDV3"
+
+// تسجيل الموديولات الخمسة
 include ':app'
+include ':mira-core'
+include ':mira-rfid'
+include ':mira-inventory'
+include ':mira-ui'
