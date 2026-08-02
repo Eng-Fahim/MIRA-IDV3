@@ -1,4 +1,7 @@
-package com.example.uhf.fragment;
+package com.mira.inventory;
+import com.mira.core.SessionManager;
+import com.mira.rfid.RFIDManager;
+
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -19,6 +22,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
