@@ -1,4 +1,5 @@
-package com.example.uhf.fragment;
+package com.mira.rfid;
+
 
 import android.annotation.SuppressLint;
 import android.content.res.Configuration;
@@ -26,6 +27,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
+
 import com.example.uhf.manager.MiraSettingsManager;
 import com.example.uhf.tools.UIHelper;
 import com.example.uhf.view.CircleSeekBar;
