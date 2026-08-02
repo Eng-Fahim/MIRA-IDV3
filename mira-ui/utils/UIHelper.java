@@ -11,8 +11,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.uhf.R;
-
 /**
  * MIRA UI Helper
  * 
@@ -59,7 +57,7 @@ public class UIHelper {
             builder.setTitle(titleInt);
             builder.setMessage(messageInt);
             if (iconInt != 0) builder.setIcon(iconInt);
-            builder.setNegativeButton(R.string.close, (dialog, which) -> dialog.dismiss());
+            builder.setNegativeButton("إغلاق", (dialog, which) -> dialog.dismiss());
             builder.create().show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,7 +74,7 @@ public class UIHelper {
             builder.setTitle(titleInt);
             builder.setMessage(message != null ? message : "");
             if (iconInt != 0) builder.setIcon(iconInt);
-            builder.setNegativeButton(R.string.close, (dialog, which) -> dialog.dismiss());
+            builder.setNegativeButton("إغلاق", (dialog, which) -> dialog.dismiss());
             builder.create().show();
         } catch (Exception e) {
             e.printStackTrace();
