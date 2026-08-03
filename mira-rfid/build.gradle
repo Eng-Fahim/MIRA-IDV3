@@ -12,18 +12,21 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
 dependencies {
-    // ربط موديولات المشروع الداخلية لمنع أخطاء Unresolved reference
+    // ربط موديولات الـ UI والـ Core لكي يراها mira-rfid
     implementation project(':mira-core')
     implementation project(':mira-ui')
 
-    // المكتبات الأساسية للـ Android والـ UI
+    // قراءة ملفات Jar و Aar الخاصة بأجهزة RSCJA / UHF داخل مجلد libs الخاص بـ mira-rfid
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+
+    // شبكات ومكتبات
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.9.0'
 }
