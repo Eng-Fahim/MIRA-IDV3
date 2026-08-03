@@ -11,6 +11,21 @@ android {
         targetSdk 34
     }
 
+    // 🛑 استبعاد الملفات والفرجمانتس القديمة المسببة لأخطاء التجميع
+    sourceSets {
+        main {
+            java {
+                exclude '**/UHFRadarLocationFragment.java'
+                exclude '**/UHFKillFragment.java'
+                exclude '**/UHFUpgradeFragment.java'
+                exclude '**/ProtectedModeAndShortRangeModeFragment.java'
+                exclude '**/UHFTagLitFragment.java'
+                exclude '**/UHFTagFlashFragment.java'
+                exclude '**/UHFLockFragment.java'
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
