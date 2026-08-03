@@ -11,10 +11,11 @@ android {
         targetSdk 34
     }
 
-    // 🛑 استبعاد الملفات والفرجمانتس القديمة المسببة لأخطاء التجميع
+    // 🛑 استبعاد كافة الـ Fragments المعطوبة المتبقية من SDK أجهزة RFID القديمة
     sourceSets {
         main {
             java {
+                // المجمعة الأولى
                 exclude '**/UHFRadarLocationFragment.java'
                 exclude '**/UHFKillFragment.java'
                 exclude '**/UHFUpgradeFragment.java'
@@ -22,6 +23,12 @@ android {
                 exclude '**/UHFTagLitFragment.java'
                 exclude '**/UHFTagFlashFragment.java'
                 exclude '**/UHFLockFragment.java'
+                
+                // المجمعة الثانية (التي ظهرت في الـ Build الأخير)
+                exclude '**/UHFSetFragment.java'
+                exclude '**/UHFLocationFragment.java'
+                exclude '**/UHFReadWriteFragment.java'
+                exclude '**/UHFReadTagFragment.java'
             }
         }
     }
