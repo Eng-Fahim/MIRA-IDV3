@@ -8,7 +8,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.mira.bridge.R; // أو حسب الـ Application ID المعرف في build.gradle مثل: import com.example.uhf.R;
+
+// 🟢 استيراد كلاس R الخاص بالتطبيق (استخدم com.example.uhf.R إذا لم تقم بتغيير namespace في build.gradle بعد)
+import com.example.uhf.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
 
-        // 🔒 تحميل الواجهة الافتراضية فقط عند التشغيل الأول
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainer, new DashboardFragment())
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
             else if (id == R.id.nav_studio) f = new StudioFragment();
             else if (id == R.id.nav_gates) f = new GatesFragment();
             else if (id == R.id.nav_settings) f = new SettingsFragment();
-            
+
             if (f != null) {
                 getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, f)
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 
-// 🟢 الـ Fragments الخاصة بالتبويبات الرئيسية
+// 🟢 الـ Fragments الملحقة بالواجهة
 
 class DashboardFragment extends Fragment {
     public DashboardFragment() {}
