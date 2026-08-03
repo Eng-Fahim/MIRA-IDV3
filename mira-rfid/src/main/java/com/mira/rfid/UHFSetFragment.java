@@ -28,7 +28,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.uhf.BuildConfig;
+import com.mira.rfid.BuildConfig;
 import com.mira.rfid.R; // ✅ صحيح
 
 import com.mira.rfid.activity.UHFMainActivity;
