@@ -4,13 +4,13 @@ plugins {
 
 android {
     namespace 'com.example.uhf' // ارجع للمسار القديم لكي يتوافق مع الأكواد الحالية
-    compileSdk 33
+    compileSdk 34
 
 
     defaultConfig {
-        applicationId "com.mira.bridge"
+        applicationId "com.mira.app"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "3.0.0"
         vectorDrawables.useSupportLibrary = true
