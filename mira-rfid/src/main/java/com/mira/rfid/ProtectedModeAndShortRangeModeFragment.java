@@ -1,4 +1,5 @@
-package com.example.uhf.fragment;
+package com.mira.rfid;
+
 
 import android.os.Bundle;
 
@@ -12,8 +13,11 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 
-import com.example.uhf.R;
-import com.example.uhf.activity.UHFMainActivity;
+// 🔗 الاستيرادات المحدثة والصحيحة للموديول
+import com.mira.rfid.R;
+import com.mira.rfid.activity.UHFMainActivity; 
+
+
 import com.mira.ui.utils.StringUtils;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.FilterEntity;
