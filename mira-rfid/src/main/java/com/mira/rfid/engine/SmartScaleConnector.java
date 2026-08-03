@@ -1,5 +1,12 @@
 package com.mira.rfid.engine;
 
+// 🔗 الاستيرادات المحدثة والصحيحة للموديول
+import com.mira.rfid.R;
+import com.mira.rfid.engine.SmartScaleConnector;
+// ملاحظة: UHFMainActivity يتبع الموديول الرئيسي أو mira-rfid حسب مكانه:
+import com.mira.rfid.activity.UHFMainActivity; 
+
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
