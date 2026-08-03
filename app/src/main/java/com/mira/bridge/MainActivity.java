@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.mira.bridge.R; // أو حسب الـ Application ID المعرف في build.gradle مثل: import com.example.uhf.R;
 
 public class MainActivity extends AppCompatActivity {
 
