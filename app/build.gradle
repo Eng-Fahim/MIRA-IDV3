@@ -35,6 +35,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // الموديولات الداخلية
+    implementation files('../mira-rfid/libs/DeviceAPI_ver20251103_release.aar')
+
     implementation project(':mira-core')
     implementation project(':mira-rfid')
     implementation project(':mira-ui')
