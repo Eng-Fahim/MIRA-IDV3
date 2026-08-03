@@ -3,8 +3,9 @@ plugins {
 }
 
 android {
-    namespace 'com.mira.bridge'
+    namespace 'com.example.uhf' // ارجع للمسار القديم لكي يتوافق مع الأكواد الحالية
     compileSdk 33
+
 
     defaultConfig {
         applicationId "com.mira.bridge"
