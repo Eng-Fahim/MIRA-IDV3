@@ -20,7 +20,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import com.example.uhf.BuildConfig;
 import com.example.uhf.R;
-import com.mira.rfid.fragment.KeyDwonFragment;
+import com.mira.rfid.KeyDwonFragment; // ✅ تغيير المسار;
 import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.utility.StringUtility;
