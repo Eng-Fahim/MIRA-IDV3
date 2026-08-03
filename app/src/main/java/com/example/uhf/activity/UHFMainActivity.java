@@ -19,39 +19,16 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTabHost;
 
-import com.mira.rfid.R; // ✅ صحيح
+import com.mira.rfid.R;
 
-
-// 🔒 1. استيراد إدارة الجلسة من وحدة Core الجديدة
+// 🔒 إدارة الجلسة من وحدة Core
 import com.mira.core.SessionManager;
 
-// 📊 2. استيراد شاشات الجرد والـ POS والمجوهرات من وحدة Inventory الجديدة
+// 📊 شاشات الجرد والـ POS والمجوهرات من وحدة Inventory
 import com.mira.inventory.JewelryDashboardFragment;
 import com.mira.inventory.MiraInventoryProFragment;
 import com.mira.inventory.MiraPosFragment;
 
-// 🧩 استيراد بقية الفراجمينتات المساعدة
-import com.mira.rfid.fragment.AuthenticateNxpUcodeDnaFragment;
-import com.mira.rfid.fragment.BlockPermalockFragment;
-import com.mira.rfid.fragment.BlockWriteFragment;
-import com.mira.rfid.fragment.MarginReadFragment;
-import com.mira.rfid.fragment.MiraDashboardFragment;
-import com.mira.rfid.fragment.MiraPWAWebFragment;
-import com.mira.rfid.fragment.MiraSecureGateFragment;
-import com.mira.rfid.fragment.ProtectedModeAndShortRangeModeFragment;
-import com.mira.rfid.fragment.UHFKillFragment;
-import com.mira.rfid.fragment.UHFLocationFragment;
-import com.mira.rfid.fragment.UHFLockFragment;
-import com.mira.rfid.fragment.UHFRadarLocationFragment;
-import com.mira.rfid.fragment.UHFReadTagFragment;
-import com.mira.rfid.fragment.UHFReadWriteFragment;
-import com.mira.rfid.fragment.UHFSetFragment;
-import com.mira.rfid.fragment.UHFTagFlashFragment;
-import com.mira.rfid.fragment.UHFTagLitFragment;
-import com.mira.rfid.fragment.UHFUpgradeFragment;
-
-import com.mira.ui.utils.ExportExcelAsyncTask;
-import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 
@@ -165,14 +142,10 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
                 fragment.onActivityResult(requestCode, resultCode, data);
             }
         }
-
-        if (currentFragment != null && currentFragment instanceof UHFReadTagFragment) {
-            currentFragment.onActivityResult(requestCode, resultCode, data);
-        }
     }
 
     // ============================================
-    // 🔒 توزيع التبويبات بناءً على الصلاحيات المجلوبة من mira-core
+    // 🔒 توزيع التبويبات بناءً على الموديولات المتاحة فعلياً
     // ============================================
     protected void initViewPageData() {
         fm = getSupportFragmentManager();
@@ -186,67 +159,22 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         // -------------------------------------------------------------
         if ("ADMIN".equalsIgnoreCase(userRole)) {
 
-            // 💎 Jewelry Dashboard (من mira-inventory)
+            // 💎 Jewelry Dashboard
             mTabHost.addTab(
                 mTabHost.newTabSpec("JewelryDashboard").setIndicator("💎"),
                 JewelryDashboardFragment.class, null
             );
 
-            // 🛒 MIRA POS Mode (من mira-inventory)
+            // 🛒 MIRA POS Mode
             mTabHost.addTab(
                 mTabHost.newTabSpec("POS Mode").setIndicator("🛒"),
                 MiraPosFragment.class, null
             );
 
-            // 📊 Inventory Pro (من mira-inventory)
-            mTabHost.addTab(mTabHost.newTabSpec("Inventory Pro").setIndicator("📊"),
-                MiraInventoryProFragment.class, null);
-
-            // 📷 Scan
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan))
-                .setIndicator(getString(R.string.uhf_msg_tab_scan)),
-                UHFReadTagFragment.class, null);
-
-            // 🌐 MIRA Web (PWA)
+            // 📊 Inventory Pro
             mTabHost.addTab(
-                mTabHost.newTabSpec("MIRA Web").setIndicator("🌐"),
-                MiraPWAWebFragment.class, null
-            );
-
-            // 🏠 Dashboard
-            mTabHost.addTab(
-                mTabHost.newTabSpec("Dashboard").setIndicator("🏠"),
-                MiraDashboardFragment.class, null
-            );
-
-            // ⚙️ Config
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set))
-                .setIndicator(getString(R.string.uhf_msg_tab_set)),
-                UHFSetFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getResources().getString(R.string.uhf_radar_loaction))
-                .setIndicator(getResources().getString(R.string.uhf_radar_loaction)),
-                UHFRadarLocationFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location))
-                .setIndicator(getString(R.string.location)),
-                UHFLocationFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read_write))
-                .setIndicator(getString(R.string.uhf_msg_tab_read_write)),
-                UHFReadWriteFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock))
-                .setIndicator(getString(R.string.uhf_msg_tab_lock)),
-                UHFLockFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill))
-                .setIndicator(getString(R.string.uhf_msg_tab_kill)),
-                UHFKillFragment.class, null);
-
-            mTabHost.addTab(
-                mTabHost.newTabSpec("MIRA Secure Gate™").setIndicator("🚪"),
-                MiraSecureGateFragment.class, null
+                mTabHost.newTabSpec("Inventory Pro").setIndicator("📊"),
+                MiraInventoryProFragment.class, null
             );
 
         } 
@@ -254,20 +182,10 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         // 📦 صلاحيات الموظف / مسؤول المخزن (INVENTORY)
         // -------------------------------------------------------------
         else {
-            mTabHost.addTab(mTabHost.newTabSpec("Inventory Pro").setIndicator("📊"),
-                MiraInventoryProFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_scan))
-                .setIndicator(getString(R.string.uhf_msg_tab_scan)),
-                UHFReadTagFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location))
-                .setIndicator(getString(R.string.location)),
-                UHFLocationFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getResources().getString(R.string.uhf_radar_loaction))
-                .setIndicator(getResources().getString(R.string.uhf_radar_loaction)),
-                UHFRadarLocationFragment.class, null);
+            mTabHost.addTab(
+                mTabHost.newTabSpec("Inventory Pro").setIndicator("📊"),
+                MiraInventoryProFragment.class, null
+            );
         }
     }
 
@@ -286,14 +204,13 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     public void exportData() {
         checkReadWritePermission();
         if (loopFlag) {
-            UIHelper.ToastMessage(this, R.string.uhf_msg_scaning);
+            Toast.makeText(this, R.string.uhf_msg_scaning, Toast.LENGTH_SHORT).show();
             return;
         }
         if (tagList == null || tagList.isEmpty()) {
-            UIHelper.ToastMessage(this, R.string.uhf_msg_export_data_empty);
+            Toast.makeText(this, R.string.uhf_msg_export_data_empty, Toast.LENGTH_SHORT).show();
             return;
         }
-        new ExportExcelAsyncTask(this, tagList).execute();
     }
 
     HashMap<Integer, Integer> soundMap = new HashMap<Integer, Integer>();
@@ -389,4 +306,4 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
             synchronized (objectLock) { objectLock.notifyAll(); }
         }
     }
-        }
+}
