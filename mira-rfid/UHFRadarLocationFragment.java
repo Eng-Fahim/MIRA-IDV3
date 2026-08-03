@@ -27,7 +27,7 @@ import androidx.fragment.app.FragmentTransaction;
 // 🔗 استيراد الموارد والأنشطة والعناصر الخارجية
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.fragment.KeyDwonFragment; // أو استبدالها بـ Fragment عادية إن تعذر الاستيراد
+import com.mira.rfid.fragment.KeyDwonFragment; // أو استبدالها بـ Fragment عادية إن تعذر الاستيراد
 import com.example.uhf.manager.MiraSettingsManager;
 import com.mira.ui.utils.UIHelper;
 import com.example.uhf.view.CircleSeekBar;

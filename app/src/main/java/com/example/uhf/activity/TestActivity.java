@@ -31,7 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.uhf.R;
-import com.example.uhf.fragment.UHFReadTagFragment;
+import com.mira.rfid.fragment.UHFReadTagFragment;
 import com.mira.ui.utils.CheckUtils;
 import com.mira.ui.utils.NumberTool;
 import com.mira.ui.utils.StringUtils;
