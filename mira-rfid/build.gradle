@@ -9,10 +9,27 @@ android {
     defaultConfig {
         minSdk 24
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
+    // 1. الموديولات الداخلية في المشروع
+    implementation project(':mira-core')
+    implementation project(':mira-ui')
+
+    // 2. مكتبات AndroidX UI
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    // ⚠️ التعديل هنا: استخدام api لتصدير ملفات jar/aar لموديول app
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // 3. الاتصالات والشبكات
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // 4. ملفات الـ SDK المحلية (JAR/AAR)
     api fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 }
