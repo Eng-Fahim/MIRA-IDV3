@@ -18,9 +18,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 // 🔗 استيراد الموارد والأنشطة من الموديول الرئيسي والموديولات الشقيقة
-import com.example.uhf.R;
-import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.engine.SmartScaleConnector;
+
+// 🔗 الاستيرادات المحدثة والصحيحة للموديول
+import com.mira.rfid.R;
+import com.mira.rfid.engine.SmartScaleConnector;
+// ملاحظة: UHFMainActivity يتبع الموديول الرئيسي أو mira-rfid حسب مكانه:
+import com.mira.rfid.activity.UHFMainActivity; 
 
 import org.json.JSONObject;
 
