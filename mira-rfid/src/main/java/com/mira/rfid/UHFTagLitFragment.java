@@ -23,9 +23,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.mira.rfid.R; // ✅ صحيح
 
-import com.example.uhf.activity.UHFMainActivity;
+import com.mira.rfid.activity.UHFMainActivity;
 import com.example.uhf.adapter.TagLedAdapter;
-import com.example.uhf.manager.MiraSettingsManager;
+import com.mira.rfid.manager.MiraSettingsManager;
 import com.rscja.deviceapi.entity.FilterEntity;
 import com.rscja.deviceapi.entity.InventoryModeEntity;
 import com.rscja.deviceapi.entity.UHFTAGInfo;

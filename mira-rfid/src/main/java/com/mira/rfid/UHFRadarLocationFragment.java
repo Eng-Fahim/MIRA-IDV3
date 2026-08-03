@@ -27,9 +27,9 @@ import androidx.fragment.app.FragmentTransaction;
 // 🔗 استيراد الموارد والأنشطة والعناصر الخارجية
 import com.mira.rfid.R; // ✅ صحيح
 
-import com.example.uhf.activity.UHFMainActivity;
+import com.mira.rfid.activity.UHFMainActivity;
 import com.mira.rfid.KeyDwonFragment; // ✅ تغيير المسار; // أو استبدالها بـ Fragment عادية إن تعذر الاستيراد
-import com.example.uhf.manager.MiraSettingsManager;
+import com.mira.rfid.manager.MiraSettingsManager;
 import com.mira.ui.utils.UIHelper;
 import com.example.uhf.view.CircleSeekBar;
 import com.example.uhf.view.RadarView;

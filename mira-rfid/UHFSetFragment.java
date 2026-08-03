@@ -31,8 +31,8 @@ import android.widget.Toast;
 import com.example.uhf.BuildConfig;
 import com.mira.rfid.R; // ✅ صحيح
 
-import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.manager.MiraSettingsManager;
+import com.mira.rfid.activity.UHFMainActivity;
+import com.mira.rfid.manager.MiraSettingsManager;
 import com.mira.ui.utils.StringUtils;
 import com.lidroid.xutils.ViewUtils;
 import com.lidroid.xutils.view.annotation.ViewInject;

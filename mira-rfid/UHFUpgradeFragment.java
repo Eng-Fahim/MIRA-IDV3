@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
 
 import com.mira.rfid.R; // ✅ صحيح
 
-import com.example.uhf.activity.UHFMainActivity;
+import com.mira.rfid.activity.UHFMainActivity;
 import com.example.uhf.filebrowser.FileManagerActivity;
 import com.mira.ui.utils.StringUtils;
 import com.mira.ui.utils.UIHelper;

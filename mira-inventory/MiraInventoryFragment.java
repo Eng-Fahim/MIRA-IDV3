@@ -608,9 +608,9 @@ public class MiraInventoryFragment extends Fragment {
     if (!soundEnabled) return;
 
     try {
-        if (getActivity() instanceof com.example.uhf.activity.UHFMainActivity) {
-            com.example.uhf.activity.UHFMainActivity activity =
-                (com.example.uhf.activity.UHFMainActivity) getActivity();
+        if (getActivity() instanceof com.mira.rfid.activity.UHFMainActivity) {
+            com.mira.rfid.activity.UHFMainActivity activity =
+                (com.mira.rfid.activity.UHFMainActivity) getActivity();
             
             if (activity == null) return;  // 🟢 حماية
 
@@ -658,7 +658,7 @@ public class MiraInventoryFragment extends Fragment {
 }
 
 // 🟢 دالة آمنة لتشغيل الصوت
-private void safePlaySound(com.example.uhf.activity.UHFMainActivity activity, int soundId) {
+private void safePlaySound(com.mira.rfid.activity.UHFMainActivity activity, int soundId) {
     try {
         activity.playSound(soundId);
     } catch (Exception e) {

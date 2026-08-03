@@ -14,7 +14,7 @@ import android.widget.RadioButton;
 
 import com.mira.rfid.R; // ✅ صحيح
 
-import com.example.uhf.activity.UHFMainActivity;
+import com.mira.rfid.activity.UHFMainActivity;
 import com.mira.ui.utils.StringUtils;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.FilterEntity;
