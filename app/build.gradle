@@ -4,11 +4,11 @@ plugins {
 
 android {
     namespace 'com.mira.bridge'
-    compileSdk 33 // 👈 هذا هو السطر المفقود المطلوب لحل المشكلة
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.mira.bridge"
-        minSdk 21
+        minSdk 24 // 👈 تم التعديل إلى 24 لحل تعارض mira-inventory
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -34,7 +34,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // الموديولات الداخلية للنظام
+    // الموديولات الداخلية
     implementation project(':mira-core')
     implementation project(':mira-rfid')
     implementation project(':mira-ui')
