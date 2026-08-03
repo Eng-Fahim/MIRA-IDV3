@@ -3,11 +3,9 @@ plugins {
 }
 
 android {
-    namespace 'com.mira.app' // إرجاع الاسم الطبيعي للتطبيق
-    compileSdk 34
-
+    namespace 'com.mira.bridge' // 👈 توحيد الـ namespace
     defaultConfig {
-        applicationId "com.mira.app"
+        applicationId "com.mira.bridge"
         minSdk 24
         targetSdk 34
         versionCode 1
