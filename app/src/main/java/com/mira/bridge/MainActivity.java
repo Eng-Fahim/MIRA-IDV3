@@ -17,10 +17,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        
-        getSupportFragmentManager().beginTransaction()
-            .replace(R.id.fragmentContainer, new DashboardFragment())
-            .commit();
+
+        // 🔒 تحميل الواجهة الافتراضية فقط عند التشغيل الأول
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, new DashboardFragment())
+                .commit();
+        }
 
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment f = null;
@@ -30,47 +33,60 @@ public class MainActivity extends AppCompatActivity {
             else if (id == R.id.nav_studio) f = new StudioFragment();
             else if (id == R.id.nav_gates) f = new GatesFragment();
             else if (id == R.id.nav_settings) f = new SettingsFragment();
-            if (f != null) getSupportFragmentManager().beginTransaction().replace(R.id.fragmentContainer, f).commit();
+            
+            if (f != null) {
+                getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, f)
+                    .commit();
+            }
             return true;
         });
     }
 }
 
-// 🟢 كل الـ Fragments هنا في نفس الملف
+// 🟢 الـ Fragments الخاصة بالتبويبات الرئيسية
 
 class DashboardFragment extends Fragment {
     public DashboardFragment() {}
-    @Override public View onCreateView(LayoutInflater i, ViewGroup c, Bundle b) {
-        View v = i.inflate(R.layout.fragment_dashboard, c, false);
-        ((TextView)v.findViewById(R.id.tvGreeting)).setText("مرحباً بك");
+    @Override 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.fragment_dashboard, container, false);
+        TextView tvGreeting = v.findViewById(R.id.tvGreeting);
+        if (tvGreeting != null) {
+            tvGreeting.setText("مرحباً بك");
+        }
         return v;
     }
 }
 
 class ScanFragment extends Fragment {
     public ScanFragment() {}
-    @Override public View onCreateView(LayoutInflater i, ViewGroup c, Bundle b) {
-        return i.inflate(R.layout.fragment_scan, c, false);
+    @Override 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_scan, container, false);
     }
 }
 
 class StudioFragment extends Fragment {
     public StudioFragment() {}
-    @Override public View onCreateView(LayoutInflater i, ViewGroup c, Bundle b) {
-        return i.inflate(R.layout.fragment_studio, c, false);
+    @Override 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_studio, container, false);
     }
 }
 
 class GatesFragment extends Fragment {
     public GatesFragment() {}
-    @Override public View onCreateView(LayoutInflater i, ViewGroup c, Bundle b) {
-        return i.inflate(R.layout.fragment_gates, c, false);
+    @Override 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_gates, container, false);
     }
 }
 
 class SettingsFragment extends Fragment {
     public SettingsFragment() {}
-    @Override public View onCreateView(LayoutInflater i, ViewGroup c, Bundle b) {
-        return i.inflate(R.layout.fragment_settings, c, false);
+    @Override 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_settings, container, false);
     }
 }
