@@ -44,8 +44,8 @@ dependencies {
     implementation project(':mira-core')
     implementation project(':mira-ui')
 
-    // قراءة ملفات Jar و Aar الخاصة بأجهزة RSCJA / UHF داخل مجلد libs الخاص بـ mira-rfid
-    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    compileOnly files('libs/DeviceAPI_ver20251103_release.aar')
+    
 
     // شبكات ومكتبات
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
