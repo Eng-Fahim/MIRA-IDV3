@@ -3,9 +3,8 @@ plugins {
 }
 
 android {
-    namespace 'com.example.uhf' // ارجع للمسار القديم لكي يتوافق مع الأكواد الحالية
+    namespace 'com.mira.app' // إرجاع الاسم الطبيعي للتطبيق
     compileSdk 34
-
 
     defaultConfig {
         applicationId "com.mira.app"
@@ -27,6 +26,7 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 }
+
 dependencies {
     // 1. ربط وحدات المشروع الداخلية
     implementation project(':mira-core')
@@ -34,11 +34,7 @@ dependencies {
     implementation project(':mira-rfid')
     implementation project(':mira-ui')
 
-    // 2. ربط مكتبات الـ RFID (سواء كانت ملفات jar محلية في مجلد libs)
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
-
-
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
     // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -47,7 +43,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.3.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'com.google.android.material:material:1.9.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     implementation 'com.github.bumptech.glide:glide:4.15.1'
