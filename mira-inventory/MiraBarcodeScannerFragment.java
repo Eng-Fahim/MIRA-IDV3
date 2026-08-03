@@ -29,7 +29,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScanner;

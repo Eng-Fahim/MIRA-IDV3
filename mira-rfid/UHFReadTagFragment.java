@@ -18,7 +18,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 // 🔗 استيراد الموارد والأنشطة من الموديول الرئيسي والموديولات الشقيقة
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.engine.SmartScaleConnector;
 

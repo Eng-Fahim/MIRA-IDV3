@@ -25,7 +25,8 @@ import androidx.annotation.RequiresApi;
 import androidx.fragment.app.FragmentTransaction;
 
 // 🔗 استيراد الموارد والأنشطة والعناصر الخارجية
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.mira.rfid.KeyDwonFragment; // ✅ تغيير المسار; // أو استبدالها بـ Fragment عادية إن تعذر الاستيراد
 import com.example.uhf.manager.MiraSettingsManager;

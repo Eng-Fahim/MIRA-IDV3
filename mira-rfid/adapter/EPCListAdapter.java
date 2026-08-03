@@ -7,7 +7,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 
 import java.util.ArrayList;

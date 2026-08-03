@@ -5,7 +5,8 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.util.Log;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 
 /**
  * MIRA RFID Sound Manager

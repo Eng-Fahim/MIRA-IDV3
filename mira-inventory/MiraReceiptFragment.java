@@ -26,7 +26,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 
 import org.json.JSONArray;
 import org.json.JSONObject;

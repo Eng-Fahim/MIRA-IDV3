@@ -15,7 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.api.MiraApiClient; // ⭐ العميل المركزي
 
 import org.json.JSONArray;

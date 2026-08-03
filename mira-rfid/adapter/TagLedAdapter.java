@@ -9,7 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 
 import java.util.List;

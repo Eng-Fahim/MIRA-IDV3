@@ -20,7 +20,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.manager.MiraSettingsManager;
 import com.mira.ui.utils.UIHelper;

@@ -21,7 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.adapter.TagLedAdapter;
 import com.example.uhf.manager.MiraSettingsManager;

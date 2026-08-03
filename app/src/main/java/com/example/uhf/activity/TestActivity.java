@@ -30,7 +30,8 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.mira.rfid.fragment.UHFReadTagFragment;
 import com.mira.ui.utils.CheckUtils;
 import com.mira.ui.utils.NumberTool;

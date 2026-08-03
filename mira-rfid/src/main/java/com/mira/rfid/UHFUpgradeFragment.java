@@ -19,7 +19,8 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.filebrowser.FileManagerActivity;
 import com.mira.ui.utils.StringUtils;

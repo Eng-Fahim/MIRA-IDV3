@@ -12,7 +12,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 import com.example.uhf.activity.UHFMainActivity;
 import com.mira.ui.utils.StringUtils;
 import com.rscja.deviceapi.RFIDWithUHFUART;

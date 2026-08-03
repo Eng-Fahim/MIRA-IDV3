@@ -19,7 +19,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTabHost;
 
-import com.example.uhf.R;
+import com.mira.rfid.R; // ✅ صحيح
+
 
 // 🔒 1. استيراد إدارة الجلسة من وحدة Core الجديدة
 import com.mira.core.SessionManager;
