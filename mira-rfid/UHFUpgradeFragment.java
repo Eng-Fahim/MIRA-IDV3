@@ -22,8 +22,8 @@ import androidx.annotation.Nullable;
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.filebrowser.FileManagerActivity;
-import com.example.uhf.tools.StringUtils;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.StringUtils;
+import com.mira.ui.utils.UIHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;

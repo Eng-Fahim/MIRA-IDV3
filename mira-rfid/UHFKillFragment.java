@@ -20,8 +20,8 @@ import android.widget.Toast;
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.manager.MiraSettingsManager;
-import com.example.uhf.tools.StringUtils;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.StringUtils;
+import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 
 import org.json.JSONObject;

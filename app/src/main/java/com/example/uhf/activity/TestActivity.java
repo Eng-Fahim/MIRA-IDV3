@@ -32,10 +32,10 @@ import android.widget.Toast;
 
 import com.example.uhf.R;
 import com.example.uhf.fragment.UHFReadTagFragment;
-import com.example.uhf.tools.CheckUtils;
-import com.example.uhf.tools.NumberTool;
-import com.example.uhf.tools.StringUtils;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.CheckUtils;
+import com.mira.ui.utils.NumberTool;
+import com.mira.ui.utils.StringUtils;
+import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.RFIDWithISO14443A;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.UHFTAGInfo;

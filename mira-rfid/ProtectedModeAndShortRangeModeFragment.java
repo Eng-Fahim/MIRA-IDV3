@@ -14,7 +14,7 @@ import android.widget.RadioButton;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.tools.StringUtils;
+import com.mira.ui.utils.StringUtils;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.FilterEntity;
 import com.rscja.utility.StringUtility;

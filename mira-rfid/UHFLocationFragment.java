@@ -20,7 +20,7 @@ import android.widget.Toast;
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.manager.MiraSettingsManager;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.UIHelper;
 import com.example.uhf.view.CircleSeekBar;
 import com.example.uhf.view.UhfLocationCanvasView;
 import com.rscja.deviceapi.interfaces.IUHF;

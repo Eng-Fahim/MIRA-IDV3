@@ -21,7 +21,7 @@ import androidx.fragment.app.FragmentActivity;
 import com.example.uhf.BuildConfig;
 import com.example.uhf.R;
 import com.example.uhf.fragment.KeyDwonFragment;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.utility.StringUtility;
 

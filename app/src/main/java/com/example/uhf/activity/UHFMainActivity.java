@@ -49,8 +49,8 @@ import com.example.uhf.fragment.UHFTagFlashFragment;
 import com.example.uhf.fragment.UHFTagLitFragment;
 import com.example.uhf.fragment.UHFUpgradeFragment;
 
-import com.example.uhf.tools.ExportExcelAsyncTask;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.ExportExcelAsyncTask;
+import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 

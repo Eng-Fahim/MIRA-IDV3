@@ -29,7 +29,7 @@ import com.example.uhf.activity.UHFMainActivity;
 import com.example.uhf.api.MiraApiClient;
 import com.example.uhf.dialog.POSCheckoutDialog;
 import com.example.uhf.engine.SmartScaleConnector;
-import com.example.uhf.tools.UIHelper;
+import com.mira.ui.utils.UIHelper;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
