@@ -1,4 +1,5 @@
-package com.example.uhf.fragment;
+package com.mira.rfid;
+
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -17,9 +18,12 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.uhf.R;
-import com.example.uhf.activity.UHFMainActivity;
-import com.example.uhf.manager.MiraSettingsManager;
+// 🔗 الاستيرادات المحدثة والصحيحة للموديول
+import com.mira.rfid.R;
+// ملاحظة: UHFMainActivity يتبع الموديول الرئيسي أو mira-rfid حسب مكانه:
+import com.mira.rfid.activity.UHFMainActivity; 
+
+import com.mira.rfid.manager.MiraSettingsManager;
 import com.mira.ui.utils.StringUtils;
 import com.mira.ui.utils.UIHelper;
 import com.rscja.deviceapi.RFIDWithUHFUART;
