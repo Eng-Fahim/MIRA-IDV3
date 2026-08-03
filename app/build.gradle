@@ -38,6 +38,8 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 
 
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
     // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
