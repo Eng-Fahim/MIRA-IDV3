@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 // 🟢 استيراد كلاس R الخاص بالتطبيق (استخدم com.example.uhf.R إذا لم تقم بتغيير namespace في build.gradle بعد)
-import com.example.uhf.R;
+import com.mira.bridge.R;
 
 public class MainActivity extends AppCompatActivity {
 
